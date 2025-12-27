@@ -1,3 +1,8 @@
+/**
+ * Main Entry Point
+ * Renders the React application to the DOM
+ */
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
