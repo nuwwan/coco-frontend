@@ -8,7 +8,7 @@ import { getToken, setToken, removeToken, isAuthenticated, decodeToken } from '.
 
 // User interface representing decoded JWT payload
 interface User {
-  userId: string;
+  username: string;
   email?: string;
   firstName?: string;
   lastName?: string;
@@ -48,10 +48,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const decoded = decodeToken(token);
           if (decoded) {
             setUser({
-              userId: decoded.userId as string,
+              username: decoded.username as string,
               email: decoded.email as string | undefined,
-              firstName: decoded.firstName as string | undefined,
-              lastName: decoded.lastName as string | undefined,
+              firstName: decoded.first_name as string | undefined,
+              lastName: decoded.last_name as string | undefined,
             });
           }
         }
@@ -71,10 +71,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const decoded = decodeToken(token);
     if (decoded) {
       setUser({
-        userId: decoded.userId as string,
+        username: decoded.username as string,
         email: decoded.email as string | undefined,
-        firstName: decoded.firstName as string | undefined,
-        lastName: decoded.lastName as string | undefined,
+        firstName: decoded.first_name as string | undefined,
+        lastName: decoded.last_name as string | undefined,
       });
     }
   };

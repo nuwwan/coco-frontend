@@ -77,7 +77,7 @@ const Admin = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2 border-b border-slate-700">
                   <span className="text-slate-400">User ID</span>
-                  <span className="text-white font-medium">{user?.userId}</span>
+                  <span className="text-white font-medium">{user?.username}</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-slate-700">
                   <span className="text-slate-400">Name</span>
