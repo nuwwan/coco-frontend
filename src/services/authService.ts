@@ -10,7 +10,7 @@ import api, { type ApiResponse } from './api';
 // ============================================
 
 export interface LoginCredentials {
-  userId: string;
+  username: string;
   password: string;
 }
 
