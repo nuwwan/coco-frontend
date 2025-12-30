@@ -17,7 +17,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    userId: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -52,7 +52,7 @@ const Register = () => {
   const validateForm = (): string | null => {
     if (!formData.firstName.trim()) return 'First name is required';
     if (!formData.lastName.trim()) return 'Last name is required';
-    if (!formData.userId.trim()) return 'User ID is required';
+    if (!formData.username.trim()) return 'User name is required';
     if (!formData.email.trim()) return 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Invalid email format';
     if (formData.password.length < 6) return 'Password must be at least 6 characters';
@@ -80,29 +80,29 @@ const Register = () => {
     try {
       // Check if we're in development mode with mock data
       // Remove this block when your backend is ready
-      if (config.app.isDevelopment && !config.api.baseUrl.includes('localhost:8080')) {
-        // Mock registration for demonstration when no backend is available
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      // if (config.app.isDevelopment && !config.api.baseUrl.includes('localhost:8080')) {
+      //   // Mock registration for demonstration when no backend is available
+      //   await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const mockPayload = {
-          userId: formData.userId,
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          exp: Math.floor(Date.now() / 1000) + config.auth.tokenExpiry,
-        };
-        const mockToken = `header.${btoa(JSON.stringify(mockPayload))}.signature`;
+      //   const mockPayload = {
+      //     userId: formData.userId,
+      //     email: formData.email,
+      //     firstName: formData.firstName,
+      //     lastName: formData.lastName,
+      //     exp: Math.floor(Date.now() / 1000) + config.auth.tokenExpiry,
+      //   };
+      //   const mockToken = `header.${btoa(JSON.stringify(mockPayload))}.signature`;
 
-        login(mockToken);
-        navigate('/admin', { replace: true });
-        return;
-      }
+      //   login(mockToken);
+      //   navigate('/admin', { replace: true });
+      //   return;
+      // }
 
       // Production API call using authService
       const response = await authService.register({
         firstName: formData.firstName,
         lastName: formData.lastName,
-        userId: formData.userId,
+        username: formData.username,
         email: formData.email,
         password: formData.password,
       });
@@ -196,19 +196,19 @@ const Register = () => {
             {/* User ID Field */}
             <div>
               <label 
-                htmlFor="userId" 
+                htmlFor="username" 
                 className="block text-sm font-medium text-slate-300 mb-2"
               >
-                User ID
+                User Name
               </label>
               <input
                 type="text"
-                id="userId"
-                name="userId"
-                value={formData.userId}
+                id="username"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 className="input-field bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                placeholder="Choose a unique user ID"
+                placeholder="Choose a unique user name"
                 required
                 autoComplete="username"
               />
