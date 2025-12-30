@@ -78,26 +78,6 @@ const Register = () => {
     }
 
     try {
-      // Check if we're in development mode with mock data
-      // Remove this block when your backend is ready
-      // if (config.app.isDevelopment && !config.api.baseUrl.includes('localhost:8080')) {
-      //   // Mock registration for demonstration when no backend is available
-      //   await new Promise(resolve => setTimeout(resolve, 1000));
-
-      //   const mockPayload = {
-      //     userId: formData.userId,
-      //     email: formData.email,
-      //     firstName: formData.firstName,
-      //     lastName: formData.lastName,
-      //     exp: Math.floor(Date.now() / 1000) + config.auth.tokenExpiry,
-      //   };
-      //   const mockToken = `header.${btoa(JSON.stringify(mockPayload))}.signature`;
-
-      //   login(mockToken);
-      //   navigate('/admin', { replace: true });
-      //   return;
-      // }
-
       // Production API call using authService
       const response = await authService.register({
         firstName: formData.firstName,
