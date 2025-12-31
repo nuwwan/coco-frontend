@@ -7,12 +7,15 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Layout/Navbar';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import AdminLayout from './components/Admin/AdminLayout';
 
-// Import pages
+// Import public pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Admin from './pages/Admin';
+
+// Import admin pages
+import { AdminHome, Employees, CocoHusk, Profile } from './pages/admin';
 
 function App() {
   return (
@@ -31,15 +34,21 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
-            {/* Protected routes - require authentication */}
-            <Route 
-              path="/admin" 
+            {/* Protected admin routes with nested layout */}
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute>
-                  <Admin />
+                  <AdminLayout />
                 </ProtectedRoute>
-              } 
-            />
+              }
+            >
+              {/* Admin sub-routes - rendered inside AdminLayout's <Outlet /> */}
+              <Route index element={<AdminHome />} />
+              <Route path="employees" element={<Employees />} />
+              <Route path="coco-husk" element={<CocoHusk />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
             
             {/* 404 - Redirect unknown routes to home */}
             <Route path="*" element={<Home />} />

@@ -62,7 +62,7 @@ const Navbar = () => {
                   Admin Panel
                 </Link>
                 <span className="text-slate-400 text-sm">
-                  Welcome, {user?.firstName || user?.userId}
+                  Welcome, {user?.firstName || user?.username}
                 </span>
                 <button 
                   onClick={handleLogout}
@@ -148,7 +148,7 @@ const Navbar = () => {
                   Admin Panel
                 </Link>
                 <div className="px-3 py-2 text-slate-400 text-sm">
-                  Welcome, {user?.firstName || user?.userId}
+                  Welcome, {user?.firstName || user?.username}
                 </div>
                 <button 
                   onClick={handleLogout}
