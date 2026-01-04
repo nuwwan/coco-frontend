@@ -15,7 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 
 // Import admin pages
-import { AdminHome, Employees, CocoHusk, Profile } from './pages/admin';
+import { AdminHome, Employees, Suppliers, CocoHusk, Profile } from './pages/admin';
 
 function App() {
   return (
@@ -46,6 +46,7 @@ function App() {
               {/* Admin sub-routes - rendered inside AdminLayout's <Outlet /> */}
               <Route index element={<AdminHome />} />
               <Route path="employees" element={<Employees />} />
+              <Route path="suppliers" element={<Suppliers />} />
               <Route path="coco-husk" element={<CocoHusk />} />
               <Route path="profile" element={<Profile />} />
             </Route>

@@ -25,3 +25,14 @@ export interface Employee {
     resignedDate?: string | null;
     updatedAt?: string;
 }
+
+export interface Supplier {
+    id?: number;
+    name: string;
+    address: string;
+    contactNumber: string;
+    email: string;
+    description: string;
+    createdAt?: string;  // readonly
+    updatedAt?: string;  // readonly
+}
