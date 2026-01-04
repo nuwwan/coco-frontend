@@ -15,7 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 
 // Import admin pages
-import { AdminHome, Employees, Suppliers, CocoHusk, Profile } from './pages/admin';
+import { AdminHome, Employees, Suppliers, Buyers, CocoHusk, Profile } from './pages/admin';
 
 function App() {
   return (
@@ -47,6 +47,7 @@ function App() {
               <Route index element={<AdminHome />} />
               <Route path="employees" element={<Employees />} />
               <Route path="suppliers" element={<Suppliers />} />
+              <Route path="buyers" element={<Buyers />} />
               <Route path="coco-husk" element={<CocoHusk />} />
               <Route path="profile" element={<Profile />} />
             </Route>
