@@ -1,9 +1,10 @@
 /**
  * API Service
- * Centralized HTTP client for all API requests
+ * Centralized HTTP client for all API requests using Axios
  * Handles authentication, error handling, and request/response interceptors
  */
 
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosError } from 'axios';
 import { config } from '../config/env';
 import { getToken, removeToken } from '../utils/jwt';
 
@@ -23,8 +24,9 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-interface RequestConfig extends RequestInit {
+interface RequestConfig {
   params?: Record<string, string | number | boolean>;
+  headers?: Record<string, string>;
 }
 
 // ============================================
@@ -32,156 +34,85 @@ interface RequestConfig extends RequestInit {
 // ============================================
 
 class ApiService {
-  private baseUrl: string;
-  private timeout: number;
+  private axiosInstance: AxiosInstance;
 
   constructor() {
-    this.baseUrl = config.api.baseUrl;
-    this.timeout = config.api.timeout;
-  }
-
-  /**
-   * Gets the default headers for requests
-   * Includes auth token if available
-   */
-  private getHeaders(customHeaders?: HeadersInit): Headers {
-    const headers = new Headers({
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...customHeaders,
+    // Create axios instance with base configuration
+    this.axiosInstance = axios.create({
+      baseURL: config.api.baseUrl,
+      timeout: config.api.timeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
     });
 
-    // Add auth token if available
-    const token = getToken();
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
+    // Request interceptor - add auth token
+    this.axiosInstance.interceptors.request.use(
+      (requestConfig) => {
+        const token = getToken();
+        if (token) {
+          requestConfig.headers.Authorization = `Bearer ${token}`;
+        }
 
-    return headers;
+        // Log request in debug mode
+        if (config.features.debugMode) {
+          console.log(`[API] ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`, requestConfig.data || '');
+        }
+
+        return requestConfig;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor - handle errors
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        // Log response in debug mode
+        if (config.features.debugMode) {
+          console.log(`[API] Response:`, response.data);
+        }
+        return response;
+      },
+      (error: AxiosError) => {
+        // Handle unauthorized - token expired or invalid
+        if (error.response?.status === 401) {
+          removeToken();
+          window.location.href = '/login';
+        }
+
+        // Log error in debug mode
+        if (config.features.debugMode) {
+          console.error(`[API] Error:`, error);
+        }
+
+        return Promise.reject(error);
+      }
+    );
   }
 
   /**
-   * Builds the full URL with query parameters
+   * Handles the response and formats it
    */
-  private buildUrl(endpoint: string, params?: Record<string, string | number | boolean>): string {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
-    
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, String(value));
-      });
-    }
-    
-    return url.toString();
-  }
-
-  /**
-   * Handles the response and error parsing
-   */
-  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-    // Handle unauthorized - token expired or invalid
-    if (response.status === 401) {
-      removeToken();
-      window.location.href = '/login';
-      throw { message: 'Session expired. Please login again.', status: 401 };
-    }
-
-    // Parse response body
-    let data;
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = await response.text();
-    }
-
-    // Handle error responses
-    if (!response.ok) {
-      const error: ApiError = {
-        message: data?.message || 'An error occurred',
-        status: response.status,
-        errors: data?.errors,
-      };
-      throw error;
-    }
-
+  private handleResponse<T>(data: T): ApiResponse<T> {
     return {
-      data: data as T,
-      message: data?.message,
+      data,
       success: true,
     };
   }
 
   /**
-   * Makes a fetch request with timeout
+   * Handles errors and formats them
    */
-  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw { message: 'Request timeout', status: 408 };
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Generic request method
-   */
-  private async request<T>(
-    method: string,
-    endpoint: string,
-    data?: unknown,
-    customConfig?: RequestConfig
-  ): Promise<ApiResponse<T>> {
-    const { params, headers: customHeaders, ...restConfig } = customConfig || {};
-    
-    const url = this.buildUrl(endpoint, params);
-    const headers = this.getHeaders(customHeaders);
-
-    const requestConfig: RequestInit = {
-      method,
-      headers,
-      ...restConfig,
+  private handleError(error: AxiosError): never {
+    const apiError: ApiError = {
+      message: (error.response?.data as { message?: string })?.message || error.message || 'An error occurred',
+      status: error.response?.status || 500,
+      errors: (error.response?.data as { errors?: Record<string, string[]> })?.errors,
     };
-
-    // Add body for non-GET requests
-    if (data && method !== 'GET') {
-      requestConfig.body = JSON.stringify(data);
-    }
-
-    // Log request in debug mode
-    if (config.features.debugMode) {
-      console.log(`[API] ${method} ${url}`, data || '');
-    }
-
-    try {
-      const response = await this.fetchWithTimeout(url, requestConfig);
-      const result = await this.handleResponse<T>(response);
-
-      // Log response in debug mode
-      if (config.features.debugMode) {
-        console.log(`[API] Response:`, result);
-      }
-
-      return result;
-    } catch (error) {
-      // Log error in debug mode
-      if (config.features.debugMode) {
-        console.error(`[API] Error:`, error);
-      }
-      throw error;
-    }
+    throw apiError;
   }
 
   // ============================================
@@ -191,40 +122,84 @@ class ApiService {
   /**
    * GET request
    */
-  async get<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>('GET', endpoint, undefined, config);
+  async get<T>(endpoint: string, requestConfig?: RequestConfig): Promise<ApiResponse<T>> {
+    try {
+      const axiosConfig: AxiosRequestConfig = {
+        params: requestConfig?.params,
+        headers: requestConfig?.headers,
+      };
+      const response = await this.axiosInstance.get<T>(endpoint, axiosConfig);
+      return this.handleResponse(response.data);
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
   /**
    * POST request
    */
-  async post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>('POST', endpoint, data, config);
+  async post<T>(endpoint: string, data?: unknown, requestConfig?: RequestConfig): Promise<ApiResponse<T>> {
+    try {
+      const axiosConfig: AxiosRequestConfig = {
+        params: requestConfig?.params,
+        headers: requestConfig?.headers,
+      };
+      const response = await this.axiosInstance.post<T>(endpoint, data, axiosConfig);
+      return this.handleResponse(response.data);
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>('PUT', endpoint, data, config);
+  async put<T>(endpoint: string, data?: unknown, requestConfig?: RequestConfig): Promise<ApiResponse<T>> {
+    try {
+      const axiosConfig: AxiosRequestConfig = {
+        params: requestConfig?.params,
+        headers: requestConfig?.headers,
+      };
+      const response = await this.axiosInstance.put<T>(endpoint, data, axiosConfig);
+      return this.handleResponse(response.data);
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
   /**
    * PATCH request
    */
-  async patch<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>('PATCH', endpoint, data, config);
+  async patch<T>(endpoint: string, data?: unknown, requestConfig?: RequestConfig): Promise<ApiResponse<T>> {
+    try {
+      const axiosConfig: AxiosRequestConfig = {
+        params: requestConfig?.params,
+        headers: requestConfig?.headers,
+      };
+      const response = await this.axiosInstance.patch<T>(endpoint, data, axiosConfig);
+      return this.handleResponse(response.data);
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
   /**
    * DELETE request
    */
-  async delete<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.request<T>('DELETE', endpoint, undefined, config);
+  async delete<T>(endpoint: string, requestConfig?: RequestConfig): Promise<ApiResponse<T>> {
+    try {
+      const axiosConfig: AxiosRequestConfig = {
+        params: requestConfig?.params,
+        headers: requestConfig?.headers,
+      };
+      const response = await this.axiosInstance.delete<T>(endpoint, axiosConfig);
+      return this.handleResponse(response.data);
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 }
 
 // Export singleton instance
 export const api = new ApiService();
 export default api;
-
