@@ -1,9 +1,11 @@
 /**
  * InputHuskTab Component
- * Manages input husk lot orders
+ * Manages input husk lot orders with AG Grid
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import type { ColDef } from 'ag-grid-community';
+import { DataGrid, BadgeRenderer, CurrencyRenderer, QuantityRenderer } from '../../common';
 import InputHuskModal from './InputHuskModal';
 
 // Input husk lot interface
@@ -59,57 +61,85 @@ const mockInputLots: InputHuskLot[] = [
     quality: 'economy',
     status: 'pending',
   },
+  {
+    id: 4,
+    lotNumber: 'INP-2024-004',
+    supplierName: 'Pacific Coco Ltd.',
+    quantity: 800,
+    unit: 'kg',
+    pricePerUnit: 24,
+    totalPrice: 19200,
+    receivedDate: '2024-12-25',
+    quality: 'premium',
+    status: 'received',
+  },
+  {
+    id: 5,
+    lotNumber: 'INP-2024-005',
+    supplierName: 'Sunrise Farms',
+    quantity: 450,
+    unit: 'kg',
+    pricePerUnit: 18,
+    totalPrice: 8100,
+    receivedDate: '2024-12-24',
+    quality: 'economy',
+    status: 'rejected',
+  },
 ];
 
 const InputHuskTab = () => {
   const [lots, setLots] = useState<InputHuskLot[]>(mockInputLots);
-  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Filter lots based on search term
-  const filteredLots = lots.filter(lot =>
-    lot.lotNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lot.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   // Calculate summary stats
   const totalQuantity = lots.reduce((sum, lot) => sum + lot.quantity, 0);
   const totalValue = lots.reduce((sum, lot) => sum + lot.totalPrice, 0);
   const pendingCount = lots.filter(lot => lot.status === 'pending').length;
 
-  /**
-   * Returns status badge styling
-   */
-  const getStatusStyle = (status: InputHuskLot['status']) => {
-    switch (status) {
-      case 'received':
-        return 'bg-blue-500/20 text-blue-400';
-      case 'inspected':
-        return 'bg-emerald-500/20 text-emerald-400';
-      case 'pending':
-        return 'bg-amber-500/20 text-amber-400';
-      case 'rejected':
-        return 'bg-red-500/20 text-red-400';
-      default:
-        return 'bg-slate-500/20 text-slate-400';
-    }
-  };
-
-  /**
-   * Returns quality badge styling
-   */
-  const getQualityStyle = (quality: InputHuskLot['quality']) => {
-    switch (quality) {
-      case 'premium':
-        return 'bg-purple-500/20 text-purple-400';
-      case 'standard':
-        return 'bg-blue-500/20 text-blue-400';
-      case 'economy':
-        return 'bg-slate-500/20 text-slate-400';
-      default:
-        return 'bg-slate-500/20 text-slate-400';
-    }
-  };
+  // AG Grid column definitions
+  const columnDefs = useMemo<ColDef<InputHuskLot>[]>(() => [
+    {
+      field: 'lotNumber',
+      headerName: 'Lot Number',
+      minWidth: 140,
+      cellClass: 'font-mono text-white',
+    },
+    {
+      field: 'supplierName',
+      headerName: 'Supplier',
+      minWidth: 180,
+    },
+    {
+      field: 'quantity',
+      headerName: 'Quantity',
+      minWidth: 120,
+      cellRenderer: QuantityRenderer,
+      cellRendererParams: { unitField: 'unit' },
+    },
+    {
+      field: 'totalPrice',
+      headerName: 'Total Price',
+      minWidth: 120,
+      cellRenderer: CurrencyRenderer,
+    },
+    {
+      field: 'receivedDate',
+      headerName: 'Received Date',
+      minWidth: 130,
+    },
+    {
+      field: 'quality',
+      headerName: 'Quality',
+      minWidth: 110,
+      cellRenderer: BadgeRenderer,
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 110,
+      cellRenderer: BadgeRenderer,
+    },
+  ], []);
 
   /**
    * Handles adding a new input lot
@@ -142,87 +172,25 @@ const InputHuskTab = () => {
       </div>
 
       {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search by lot number or supplier..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="input-field bg-slate-700 border-slate-600 text-white placeholder-slate-400 flex-1 max-w-md"
-        />
+      <div className="flex justify-end mb-4">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="btn-primary flex items-center space-x-2 self-start"
+          className="btn-primary flex items-center space-x-2"
         >
           <span>+</span>
           <span>Create Input Lot</span>
         </button>
       </div>
 
-      {/* Input Lots Table */}
-      <div className="card bg-slate-800/50 backdrop-blur border border-slate-700 overflow-hidden">
-        <h2 className="text-xl font-semibold text-white mb-4 px-4 pt-4">Input Husk Lots</h2>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-700">
-                <th className="text-left py-4 px-4 text-slate-400 font-medium">Lot Number</th>
-                <th className="text-left py-4 px-4 text-slate-400 font-medium">Supplier</th>
-                <th className="text-left py-4 px-4 text-slate-400 font-medium hidden sm:table-cell">Quantity</th>
-                <th className="text-left py-4 px-4 text-slate-400 font-medium hidden md:table-cell">Total Price</th>
-                <th className="text-left py-4 px-4 text-slate-400 font-medium">Quality</th>
-                <th className="text-left py-4 px-4 text-slate-400 font-medium">Status</th>
-                <th className="text-right py-4 px-4 text-slate-400 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLots.map((lot) => (
-                <tr 
-                  key={lot.id} 
-                  className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <span className="text-white font-mono">{lot.lotNumber}</span>
-                    <p className="text-slate-400 text-xs mt-1">{lot.receivedDate}</p>
-                  </td>
-                  <td className="py-4 px-4 text-slate-300">{lot.supplierName}</td>
-                  <td className="py-4 px-4 text-slate-300 hidden sm:table-cell">
-                    {lot.quantity.toLocaleString()} {lot.unit}
-                  </td>
-                  <td className="py-4 px-4 text-emerald-400 font-medium hidden md:table-cell">
-                    ${lot.totalPrice.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getQualityStyle(lot.quality)}`}>
-                      {lot.quality}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusStyle(lot.status)}`}>
-                      {lot.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <button className="text-slate-400 hover:text-white p-2 transition-colors" title="View">
-                      👁️
-                    </button>
-                    <button className="text-slate-400 hover:text-white p-2 transition-colors" title="Edit">
-                      ✏️
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty State */}
-        {filteredLots.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-400">No input lots found.</p>
-          </div>
-        )}
+      {/* AG Grid Table */}
+      <div className="card bg-slate-800/50 backdrop-blur border border-slate-700 p-0 overflow-hidden">
+        <DataGrid<InputHuskLot>
+          rowData={lots}
+          columnDefs={columnDefs}
+          height="450px"
+          pagination={true}
+          pageSize={10}
+        />
       </div>
 
       {/* Create Input Lot Modal */}
@@ -236,4 +204,3 @@ const InputHuskTab = () => {
 };
 
 export default InputHuskTab;
-
