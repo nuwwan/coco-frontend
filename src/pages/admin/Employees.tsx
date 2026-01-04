@@ -1,83 +1,271 @@
 /**
  * Employees Page Component
- * Manages employee data with AG Grid
+ * Manages employee data with AG Grid and CRUD operations
  */
 
-import { useState, useMemo } from 'react';
-import type { ColDef } from 'ag-grid-community';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { DataGrid, BadgeRenderer, AvatarRenderer } from '../../components/common';
+import { EmployeeModal, DeleteConfirmModal } from '../../components/Admin/Employees';
+import employeeService, {  type CreateEmployeeData, type UpdateEmployeeData } from '../../services/employeeService';
+import type { Employee } from '../../utils/types';
+import { config } from '../../config/env';
 
-// Employee interface
-interface Employee {
+interface TableEmployee {
   id: number;
   name: string;
-  role: string;
-  email: string;
-  status: 'active' | 'inactive';
-  joinDate: string;
-  department: string;
-  phone: string;
+  birth_date: string;
+  contact_number: string;
+  created_at: string;
+  gender: string;
+  hourly_rate: number;
+  is_active: boolean;
+  joined_date: string;
+  position: string;
 }
 
-// Mock employee data - replace with API data
-const mockEmployees: Employee[] = [
-  { id: 1, name: 'John Doe', role: 'Manager', email: 'john@coco.com', status: 'active', joinDate: '2024-01-15', department: 'Operations', phone: '+1 234 567 890' },
-  { id: 2, name: 'Jane Smith', role: 'Supervisor', email: 'jane@coco.com', status: 'active', joinDate: '2024-02-20', department: 'Production', phone: '+1 234 567 891' },
-  { id: 3, name: 'Bob Johnson', role: 'Worker', email: 'bob@coco.com', status: 'active', joinDate: '2024-03-10', department: 'Warehouse', phone: '+1 234 567 892' },
-  { id: 4, name: 'Alice Brown', role: 'Worker', email: 'alice@coco.com', status: 'inactive', joinDate: '2024-04-05', department: 'Production', phone: '+1 234 567 893' },
-  { id: 5, name: 'Charlie Wilson', role: 'Supervisor', email: 'charlie@coco.com', status: 'active', joinDate: '2024-05-12', department: 'Quality', phone: '+1 234 567 894' },
-  { id: 6, name: 'Diana Ross', role: 'Worker', email: 'diana@coco.com', status: 'active', joinDate: '2024-06-18', department: 'Packaging', phone: '+1 234 567 895' },
-  { id: 7, name: 'Edward Miller', role: 'Manager', email: 'edward@coco.com', status: 'active', joinDate: '2024-07-22', department: 'Sales', phone: '+1 234 567 896' },
-  { id: 8, name: 'Fiona Garcia', role: 'Worker', email: 'fiona@coco.com', status: 'inactive', joinDate: '2024-08-30', department: 'Production', phone: '+1 234 567 897' },
-];
-
 const Employees = () => {
-  const [employees] = useState<Employee[]>(mockEmployees);
+  // State
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /**
+   * Fetches employees from API
+   */
+  const fetchEmployees = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await employeeService.getAll();
+      setEmployees(response.data.employees);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to fetch employees';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch employees on mount
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  /**
+   * Handles creating a new employee
+   */
+  const handleCreate = async (data: Employee) => {
+    setIsSubmitting(true);
+
+    try {
+      if(!data.user.id) return;
+      const createData: CreateEmployeeData = {
+        userId: data.user.id,
+        gender: data.gender,
+        birthDate: data.birthDate || '',
+        address: data.address || '',
+        contactNumber: data.contactNumber || '',
+        position: data.position || '',
+        hourlyRate: data.hourlyRate || 0,
+        joinedDate: data.joinedDate || '',
+        resignedDate: data.resignedDate || '',
+        description: data.description || '',
+        isActive: data.isActive || true,
+      };
+      const response = await employeeService.create(createData);
+      setEmployees(prev => [...prev, response.data]);
+      setIsModalOpen(false);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to create employee';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Handles updating an employee
+   */
+  const handleUpdate = async (data: Employee) => {
+    if (!selectedEmployee) return;
+    setIsSubmitting(true);
+
+    try {
+      if(!selectedEmployee.id) return;
+      const updateData: UpdateEmployeeData = {
+        id: selectedEmployee.id,
+        userId: data.user.id,
+        gender: data.gender,
+        birthDate: data.birthDate || undefined,
+        address: data.address || '',
+        contactNumber: data.contactNumber || '',
+        position: data.position || '',
+        hourlyRate: data.hourlyRate || 0,
+        joinedDate: data.joinedDate || '',
+        resignedDate: data.resignedDate || undefined,
+        description: data.description || '',
+        isActive: data.isActive || true,
+      };
+      const response = await employeeService.update(selectedEmployee.id, updateData);
+      setEmployees(prev =>
+        prev.map(emp => (emp.id === selectedEmployee.id ? { ...emp, ...response.data } : emp))
+      );
+      setIsModalOpen(false);
+      setSelectedEmployee(null);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to update employee';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Handles deleting an employee
+   */
+  const handleDelete = async () => {
+    if (!selectedEmployee) return;
+    setIsSubmitting(true);
+
+    try {
+      if(!selectedEmployee.id) return;
+      await employeeService.delete(selectedEmployee.id);
+      setEmployees(prev => prev.filter(emp => emp.id !== selectedEmployee.id));
+      setIsDeleteModalOpen(false);
+      setSelectedEmployee(null);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to delete employee';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Opens the create modal
+   */
+  const openCreateModal = () => {
+    setSelectedEmployee(null);
+    setIsModalOpen(true);
+  };
+
+  /**
+   * Opens the edit modal
+   */
+  const openEditModal = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsModalOpen(true);
+  };
+
+  /**
+   * Opens the delete confirmation modal
+   */
+  const openDeleteModal = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDeleteModalOpen(true);
+  };
 
   // Calculate summary stats
   const totalEmployees = employees.length;
-  const activeCount = employees.filter(emp => emp.status === 'active').length;
-  const departmentCount = new Set(employees.map(emp => emp.department)).size;
+  const activeCount = employees.filter(emp => emp.isActive).length;
+  const departmentCount = employees.filter(emp => emp.isActive).length; // TODO: Add department count
+
+  // Actions cell renderer
+  const ActionsRenderer = (props: ICellRendererParams<Employee>) => {
+    const employee = props.data;
+    if (!employee) return null;
+
+    return (
+      <div className="flex items-center justify-end space-x-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            openEditModal(employee);
+          }}
+          className="text-slate-400 hover:text-white p-2 transition-colors"
+          title="Edit"
+        >
+          ✏️
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            openDeleteModal(employee);
+          }}
+          className="text-slate-400 hover:text-red-400 p-2 transition-colors"
+          title="Delete"
+        >
+          🗑️
+        </button>
+      </div>
+    );
+  };
 
   // AG Grid column definitions
   const columnDefs = useMemo<ColDef<Employee>[]>(() => [
     {
-      field: 'name',
-      headerName: 'Employee',
+      field: 'id',
+      headerName: 'ID',
+      minWidth: 120
+    },
+    {
+      field: 'user.firstName',
+      headerName: 'First Name',
       minWidth: 200,
-      cellRenderer: AvatarRenderer,
     },
     {
-      field: 'role',
-      headerName: 'Role',
-      minWidth: 120,
-      cellRenderer: BadgeRenderer,
+      field: 'user.lastName',
+      headerName: 'Last Name',
+      minWidth: 200,
     },
     {
-      field: 'department',
-      headerName: 'Department',
-      minWidth: 130,
-    },
-    {
-      field: 'email',
-      headerName: 'Email',
-      minWidth: 180,
-    },
-    {
-      field: 'phone',
-      headerName: 'Phone',
+      field: 'gender',
+      headerName: 'Gender',
       minWidth: 140,
     },
     {
-      field: 'joinDate',
-      headerName: 'Join Date',
+      field: 'hourlyRate',
+      headerName: 'Hourly Rate',
       minWidth: 120,
     },
     {
-      field: 'status',
-      headerName: 'Status',
+      field: 'isActive',
+      headerName: 'Is Active',
       minWidth: 100,
-      cellRenderer: BadgeRenderer,
+    },
+    {
+      field: 'joinedDate',
+      headerName: 'Joined Date',
+      minWidth: 120,
+    },
+    {
+      field: 'position',
+      headerName: 'Position',
+      minWidth: 120,
+    },
+    {
+      headerName: 'Actions',
+      minWidth: 100,
+      maxWidth: 100,
+      sortable: false,
+      filter: false,
+      cellRenderer: ActionsRenderer,
     },
   ], []);
 
@@ -93,13 +281,29 @@ const Employees = () => {
             Manage your team members and their roles
           </p>
         </div>
-        
+
         {/* Add Employee Button */}
-        <button className="btn-primary flex items-center space-x-2 self-start">
+        <button
+          onClick={openCreateModal}
+          className="btn-primary flex items-center space-x-2 self-start"
+        >
           <span>+</span>
           <span>Add Employee</span>
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
+          {error}
+          <button
+            onClick={fetchEmployees}
+            className="ml-4 underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -125,15 +329,33 @@ const Employees = () => {
           height="500px"
           pagination={true}
           pageSize={10}
+          loading={loading}
         />
       </div>
 
-      {/* Development Note */}
-      <div className="mt-6 p-4 bg-emerald-900/30 border border-emerald-700 rounded-lg">
-        <p className="text-emerald-400 text-sm">
-          💡 <strong>Development Note:</strong> Connect to your backend API for real employee data management.
-        </p>
-      </div>
+      {/* Create/Edit Employee Modal */}
+      <EmployeeModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedEmployee(null);
+        }}
+        onSubmit={selectedEmployee ? handleUpdate : handleCreate}
+        employee={selectedEmployee}
+        isLoading={isSubmitting}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedEmployee(null);
+        }}
+        onConfirm={handleDelete}
+        employeeName={selectedEmployee ? selectedEmployee.user.firstName : ''}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 };
