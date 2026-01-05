@@ -5,6 +5,5 @@
 
 export { default as InputHuskTab } from './InputHuskTab';
 export { default as OutputHuskTab } from './OutputHuskTab';
-export { default as InputHuskModal } from './InputHuskModal';
 export { default as OutputHuskModal } from './OutputHuskModal';
 
