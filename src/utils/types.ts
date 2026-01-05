@@ -36,3 +36,14 @@ export interface Supplier {
     createdAt?: string;  // readonly
     updatedAt?: string;  // readonly
 }
+
+export interface Buyer {
+    id?: number;
+    name: string;
+    address: string;
+    contactNumber: string;
+    email: string;
+    description: string;
+    createdAt?: string;  // readonly
+    updatedAt?: string;  // readonly
+}
