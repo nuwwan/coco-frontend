@@ -3,8 +3,8 @@
  * Barrel export for all input husk-related components
  */
 
-import InputHuskModal from './InputCocohuskModal';
+import InputCocohuskModal from './InputCocohuskModal';
 import DeleteInputCocoHuskModal from './DeleteCocohuskModal';
 import SupplierSearchSection from './SupplierSearchSection';
 
-export { InputHuskModal, DeleteInputCocoHuskModal, SupplierSearchSection };
+export { InputCocohuskModal, DeleteInputCocoHuskModal, SupplierSearchSection };

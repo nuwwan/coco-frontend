@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { DataGrid, BadgeRenderer, CurrencyRenderer, QuantityRenderer } from '../../common';
 // Import modals from InputCocoHusk folder
-import { InputHuskModal, DeleteInputCocoHuskModal } from '../InputCocoHusk';
+import { InputCocohuskModal, DeleteInputCocoHuskModal } from '../InputCocoHusk';
 import inputHuskService from '../../../services/inputhuskService';
 import type { InputHuskLot, CreateInputHuskLot } from '../../../utils/types';
 
@@ -292,7 +292,7 @@ const InputHuskTab = () => {
       </div>
 
       {/* Create/Edit Input Lot Modal */}
-      <InputHuskModal
+      <InputCocohuskModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
