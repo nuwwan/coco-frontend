@@ -1,12 +1,11 @@
 /**
  * Employee Service
  * Handles all employee-related API calls
- * 
- * Note: All endpoints use trailing slashes for Django compatibility
  */
 
 import api, { type ApiResponse } from './api';
 import type { Employee } from '../utils/types';
+import { withSlash } from '../utils/utilFunctions';
 
 // ============================================
 // Types & Interfaces
@@ -46,13 +45,6 @@ class EmployeeService {
   private basePath = '/master-data/employees';
 
   /**
-   * Ensures URL has trailing slash for Django compatibility
-   */
-  private withSlash(path: string): string {
-    return path.endsWith('/') ? path : `${path}/`;
-  }
-
-  /**
    * Get all employees
    * @param page - Page number (optional)
    * @param pageSize - Number of items per page (optional)
@@ -64,7 +56,7 @@ class EmployeeService {
     if (pageSize !== undefined) params.pageSize = pageSize;
     if (search) params.search = search;
 
-    return api.get<EmployeeListResponse>(this.withSlash(this.basePath), { params });
+    return api.get<EmployeeListResponse>(withSlash(this.basePath), { params });
   }
 
   /**
@@ -72,7 +64,7 @@ class EmployeeService {
    * @param id - Employee ID
    */
   async getById(id: number): Promise<ApiResponse<Employee>> {
-    return api.get<Employee>(this.withSlash(`${this.basePath}/${id}`));
+    return api.get<Employee>(withSlash(`${this.basePath}/${id}`));
   }
 
   /**
@@ -80,7 +72,7 @@ class EmployeeService {
    * @param data - Employee data
    */
   async create(data: CreateEmployeeData): Promise<ApiResponse<Employee>> {
-    return api.post<Employee>(this.withSlash(this.basePath), data);
+    return api.post<Employee>(withSlash(this.basePath), data);
   }
 
   /**
@@ -89,7 +81,7 @@ class EmployeeService {
    * @param data - Updated employee data
    */
   async update(id: number, data: Partial<CreateEmployeeData>): Promise<ApiResponse<Employee>> {
-    return api.put<Employee>(this.withSlash(`${this.basePath}/${id}`), data);
+    return api.put<Employee>(withSlash(`${this.basePath}/${id}`), data);
   }
 
   /**
@@ -97,7 +89,7 @@ class EmployeeService {
    * @param id - Employee ID
    */
   async delete(id: number): Promise<ApiResponse<void>> {
-    return api.delete<void>(this.withSlash(`${this.basePath}/${id}`));
+    return api.delete<void>(withSlash(`${this.basePath}/${id}`));
   }
 
   /**
@@ -105,7 +97,7 @@ class EmployeeService {
    * @param department - Department name
    */
   async getByDepartment(department: string): Promise<ApiResponse<Employee[]>> {
-    return api.get<Employee[]>(this.withSlash(`${this.basePath}/department/${department}`));
+    return api.get<Employee[]>(withSlash(`${this.basePath}/department/${department}`));
   }
 
   /**
@@ -114,7 +106,7 @@ class EmployeeService {
    * @param status - New status
    */
   async updateStatus(id: number, status: 'active' | 'inactive'): Promise<ApiResponse<Employee>> {
-    return api.patch<Employee>(this.withSlash(`${this.basePath}/${id}/status`), { status });
+    return api.patch<Employee>(withSlash(`${this.basePath}/${id}/status`), { status });
   }
 }
 

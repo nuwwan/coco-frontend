@@ -1,12 +1,11 @@
 /**
- * Supplier Service
- * Handles all supplier-related API calls
- * 
- * Note: All endpoints use trailing slashes for Django compatibility
- */
+ * Buyer Service
+ * Handles all buyer-related API calls
+*/
 
 import api, { type ApiResponse } from './api';
-import type { Buyer, Supplier } from '../utils/types';
+import type { Buyer } from '../utils/types';
+import { withSlash } from '../utils/utilFunctions';
 
 // ============================================
 // Types & Interfaces
@@ -29,18 +28,11 @@ export interface BuyerListResponse {
 }
 
 // ============================================
-// Supplier Service
+// Buyer Service
 // ============================================
 
 class BuyerService {
   private basePath = '/master-data/buyers';
-
-  /**
-   * Ensures URL has trailing slash for Django compatibility
-   */
-  private withSlash(path: string): string {
-    return path.endsWith('/') ? path : `${path}/`;
-  }
 
   /**
    * Get all buyers
@@ -54,7 +46,7 @@ class BuyerService {
     if (pageSize !== undefined) params.pageSize = pageSize;
     if (search) params.search = search;
 
-    return api.get<BuyerListResponse>(this.withSlash(this.basePath), { params });
+    return api.get<BuyerListResponse>(withSlash(this.basePath), { params });
   }
 
   /**
@@ -62,7 +54,7 @@ class BuyerService {
    * @param id - Buyer ID
    */
   async getById(id: number): Promise<ApiResponse<Buyer>> {
-    return api.get<Buyer>(this.withSlash(`${this.basePath}/${id}`));
+    return api.get<Buyer>(withSlash(`${this.basePath}/${id}`));
   }
 
   /**
@@ -70,7 +62,7 @@ class BuyerService {
    * @param data - Buyer data
    */
   async create(data: CreateBuyerData): Promise<ApiResponse<Buyer>> {
-    return api.post<Buyer>(this.withSlash(this.basePath), data);
+    return api.post<Buyer>(withSlash(this.basePath), data);
   }
 
   /**
@@ -79,15 +71,15 @@ class BuyerService {
    * @param data - Updated buyer data
    */
   async update(id: number, data: Partial<CreateBuyerData>): Promise<ApiResponse<Buyer>> {
-    return api.put<Buyer>(this.withSlash(`${this.basePath}/${id}`), data);
+    return api.put<Buyer>(withSlash(`${this.basePath}/${id}`), data);
   }
 
   /**
    * Delete a buyer
-   * @param id - Supplier ID
+   * @param id - Buyer ID
    */
   async delete(id: number): Promise<ApiResponse<void>> {
-    return api.delete<void>(this.withSlash(`${this.basePath}/${id}`));
+    return api.delete<void>(withSlash(`${this.basePath}/${id}`));
   }
 }
 
