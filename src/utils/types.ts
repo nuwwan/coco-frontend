@@ -47,3 +47,34 @@ export interface Buyer {
     createdAt?: string;  // readonly
     updatedAt?: string;  // readonly
 }
+
+export interface InputHuskLot {
+    id?: number;
+    supplier: number;
+    dateReceived: string;
+    quantity: number;
+    quality: string;
+    unitPrice: string;
+    discount: string;
+    transportCost: string;
+    loadUnloadCost: string;
+    otherCosts: string;
+    grossCost: string;
+    netCost: string;
+    remarks: string;
+    createdBy: number;
+    createdAt: string;
+}
+
+export interface CreateInputHuskLot {
+    supplier: number;
+    dateReceived: string;
+    quantity: number;
+    quality: string;
+    unitPrice: string;
+    discount: string;
+    transportCost: string;
+    loadUnloadCost: string;
+    otherCosts: string;
+    remarks: string;
+}

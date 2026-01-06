@@ -1,131 +1,207 @@
 /**
  * InputHuskTab Component
- * Manages input husk lot orders with AG Grid
+ * Manages input husk lot orders with AG Grid and API integration
  */
 
-import { useState, useMemo } from 'react';
-import type { ColDef } from 'ag-grid-community';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { DataGrid, BadgeRenderer, CurrencyRenderer, QuantityRenderer } from '../../common';
-import InputHuskModal from './InputHuskModal';
-
-// Input husk lot interface
-export interface InputHuskLot {
-  id: number;
-  lotNumber: string;
-  supplierName: string;
-  quantity: number;
-  unit: string;
-  pricePerUnit: number;
-  totalPrice: number;
-  receivedDate: string;
-  quality: 'premium' | 'standard' | 'economy';
-  status: 'pending' | 'received' | 'inspected' | 'rejected';
-  notes?: string;
-}
-
-// Mock data - replace with API data
-const mockInputLots: InputHuskLot[] = [
-  {
-    id: 1,
-    lotNumber: 'INP-2024-001',
-    supplierName: 'Green Coconut Farms',
-    quantity: 500,
-    unit: 'kg',
-    pricePerUnit: 25,
-    totalPrice: 12500,
-    receivedDate: '2024-12-28',
-    quality: 'premium',
-    status: 'received',
-  },
-  {
-    id: 2,
-    lotNumber: 'INP-2024-002',
-    supplierName: 'Island Coco Suppliers',
-    quantity: 1200,
-    unit: 'kg',
-    pricePerUnit: 20,
-    totalPrice: 24000,
-    receivedDate: '2024-12-27',
-    quality: 'standard',
-    status: 'inspected',
-  },
-  {
-    id: 3,
-    lotNumber: 'INP-2024-003',
-    supplierName: 'Tropical Harvest Co.',
-    quantity: 300,
-    unit: 'kg',
-    pricePerUnit: 22,
-    totalPrice: 6600,
-    receivedDate: '2024-12-26',
-    quality: 'economy',
-    status: 'pending',
-  },
-  {
-    id: 4,
-    lotNumber: 'INP-2024-004',
-    supplierName: 'Pacific Coco Ltd.',
-    quantity: 800,
-    unit: 'kg',
-    pricePerUnit: 24,
-    totalPrice: 19200,
-    receivedDate: '2024-12-25',
-    quality: 'premium',
-    status: 'received',
-  },
-  {
-    id: 5,
-    lotNumber: 'INP-2024-005',
-    supplierName: 'Sunrise Farms',
-    quantity: 450,
-    unit: 'kg',
-    pricePerUnit: 18,
-    totalPrice: 8100,
-    receivedDate: '2024-12-24',
-    quality: 'economy',
-    status: 'rejected',
-  },
-];
+// Import modals from InputCocoHusk folder
+import { InputCocohuskModal, DeleteInputCocoHuskModal } from '../InputCocoHusk';
+import inputHuskService from '../../../services/inputhuskService';
+import type { InputHuskLot, CreateInputHuskLot } from '../../../utils/types';
 
 const InputHuskTab = () => {
-  const [lots, setLots] = useState<InputHuskLot[]>(mockInputLots);
+  // State
+  const [lots, setLots] = useState<InputHuskLot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedLot, setSelectedLot] = useState<InputHuskLot | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /**
+   * Fetches input husk lots from API
+   */
+  const fetchLots = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await inputHuskService.getAll();
+      setLots(response.data.results);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to fetch input husk lots';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch lots on mount
+  useEffect(() => {
+    fetchLots();
+  }, [fetchLots]);
+
+  /**
+   * Handles creating a new input husk lot
+   */
+  const handleCreate = async (data: CreateInputHuskLot) => {
+    setIsSubmitting(true);
+
+    try {
+      const response = await inputHuskService.create(data);
+      setLots(prev => [response.data, ...prev]);
+      setIsModalOpen(false);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to create input husk lot';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Handles updating an input husk lot
+   */
+  const handleUpdate = async (data: CreateInputHuskLot) => {
+    if (!selectedLot?.id) return;
+    setIsSubmitting(true);
+
+    try {
+      const response = await inputHuskService.update(selectedLot.id, data);
+      setLots(prev =>
+        prev.map(lot => (lot.id === selectedLot.id ? response.data : lot))
+      );
+      setIsModalOpen(false);
+      setSelectedLot(null);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to update input husk lot';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Handles deleting an input husk lot
+   */
+  const handleDelete = async () => {
+    if (!selectedLot?.id) return;
+    setIsSubmitting(true);
+
+    try {
+      await inputHuskService.delete(selectedLot.id);
+      setLots(prev => prev.filter(lot => lot.id !== selectedLot.id));
+      setIsDeleteModalOpen(false);
+      setSelectedLot(null);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to delete input husk lot';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Opens the create modal
+   */
+  const openCreateModal = () => {
+    setSelectedLot(null);
+    setIsModalOpen(true);
+  };
+
+  /**
+   * Opens the edit modal
+   */
+  const openEditModal = (lot: InputHuskLot) => {
+    setSelectedLot(lot);
+    setIsModalOpen(true);
+  };
+
+  /**
+   * Opens the delete confirmation modal
+   */
+  const openDeleteModal = (lot: InputHuskLot) => {
+    setSelectedLot(lot);
+    setIsDeleteModalOpen(true);
+  };
 
   // Calculate summary stats
-  const totalQuantity = lots.reduce((sum, lot) => sum + lot.quantity, 0);
-  const totalValue = lots.reduce((sum, lot) => sum + lot.totalPrice, 0);
-  const pendingCount = lots.filter(lot => lot.status === 'pending').length;
+  const totalQuantity = lots.reduce((sum, lot) => sum + (lot.quantity || 0), 0);
+  const totalValue = lots.reduce((sum, lot) => sum + parseFloat(lot.grossCost || '0'), 0);
+  const totalLots = lots.length;
+
+  // Actions cell renderer
+  const ActionsRenderer = (props: ICellRendererParams<InputHuskLot>) => {
+    const lot = props.data;
+    if (!lot) return null;
+
+    return (
+      <div className="flex items-center justify-end space-x-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            openEditModal(lot);
+          }}
+          className="text-slate-400 hover:text-white p-2 transition-colors"
+          title="Edit"
+        >
+          ✏️
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            openDeleteModal(lot);
+          }}
+          className="text-slate-400 hover:text-red-400 p-2 transition-colors"
+          title="Delete"
+        >
+          🗑️
+        </button>
+      </div>
+    );
+  };
 
   // AG Grid column definitions
   const columnDefs = useMemo<ColDef<InputHuskLot>[]>(() => [
     {
-      field: 'lotNumber',
-      headerName: 'Lot Number',
-      minWidth: 140,
-      cellClass: 'font-mono text-white',
+      field: 'id',
+      headerName: 'ID',
+      minWidth: 80,
+      maxWidth: 100,
     },
     {
-      field: 'supplierName',
-      headerName: 'Supplier',
-      minWidth: 180,
+      field: 'supplier',
+      headerName: 'Supplier ID',
+      minWidth: 120,
+    },
+    {
+      field: 'dateReceived',
+      headerName: 'Date Received',
+      minWidth: 130,
+      valueFormatter: (params) => {
+        if (!params.value) return '';
+        return params.value.substring(0, 10);
+      },
     },
     {
       field: 'quantity',
       headerName: 'Quantity',
       minWidth: 120,
       cellRenderer: QuantityRenderer,
-      cellRendererParams: { unitField: 'unit' },
-    },
-    {
-      field: 'totalPrice',
-      headerName: 'Total Price',
-      minWidth: 120,
-      cellRenderer: CurrencyRenderer,
-    },
-    {
-      field: 'receivedDate',
-      headerName: 'Received Date',
-      minWidth: 130,
+      cellRendererParams: { unit: 'kg' },
     },
     {
       field: 'quality',
@@ -134,27 +210,48 @@ const InputHuskTab = () => {
       cellRenderer: BadgeRenderer,
     },
     {
-      field: 'status',
-      headerName: 'Status',
-      minWidth: 110,
-      cellRenderer: BadgeRenderer,
+      field: 'unitPrice',
+      headerName: 'Unit Price',
+      minWidth: 120,
+      cellRenderer: CurrencyRenderer,
+    },
+    {
+      field: 'grossCost',
+      headerName: 'Gross Cost',
+      minWidth: 120,
+      cellRenderer: CurrencyRenderer,
+    },
+    {
+      field: 'netCost',
+      headerName: 'Net Cost',
+      minWidth: 120,
+      cellRenderer: CurrencyRenderer,
+    },
+    {
+      headerName: 'Actions',
+      minWidth: 100,
+      maxWidth: 100,
+      sortable: false,
+      filter: false,
+      cellRenderer: ActionsRenderer,
     },
   ], []);
 
-  /**
-   * Handles adding a new input lot
-   */
-  const handleAddLot = (newLot: Omit<InputHuskLot, 'id'>) => {
-    const lot: InputHuskLot = {
-      ...newLot,
-      id: lots.length + 1,
-    };
-    setLots([lot, ...lots]);
-    setIsModalOpen(false);
-  };
-
   return (
     <div>
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
+          {error}
+          <button
+            onClick={fetchLots}
+            className="ml-4 underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
@@ -166,15 +263,15 @@ const InputHuskTab = () => {
           <p className="text-2xl font-bold text-emerald-400">${totalValue.toLocaleString()}</p>
         </div>
         <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
-          <p className="text-slate-400 text-sm">Pending Lots</p>
-          <p className="text-2xl font-bold text-amber-400">{pendingCount}</p>
+          <p className="text-slate-400 text-sm">Total Lots</p>
+          <p className="text-2xl font-bold text-amber-400">{totalLots}</p>
         </div>
       </div>
 
       {/* Actions Bar */}
       <div className="flex justify-end mb-4">
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={openCreateModal}
           className="btn-primary flex items-center space-x-2"
         >
           <span>+</span>
@@ -190,14 +287,32 @@ const InputHuskTab = () => {
           height="450px"
           pagination={true}
           pageSize={10}
+          loading={loading}
         />
       </div>
 
-      {/* Create Input Lot Modal */}
-      <InputHuskModal
+      {/* Create/Edit Input Lot Modal */}
+      <InputCocohuskModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddLot}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedLot(null);
+        }}
+        onSubmit={selectedLot ? handleUpdate : handleCreate}
+        inputHuskLot={selectedLot}
+        isLoading={isSubmitting}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteInputCocoHuskModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedLot(null);
+        }}
+        onConfirm={handleDelete}
+        lotId={selectedLot?.id?.toString() || ''}
+        isLoading={isSubmitting}
       />
     </div>
   );
