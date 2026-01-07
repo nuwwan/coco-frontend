@@ -1,39 +1,193 @@
 /**
  * AdminSidebar Component
- * Left navigation sidebar for admin panel
+ * Left navigation sidebar for admin panel with expandable menu groups
  */
 
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-// Navigation item interface
+// Single navigation item interface
 interface NavItem {
   path: string;
   label: string;
   icon: string;
 }
 
-// Navigation items configuration
-const navItems: NavItem[] = [
+// Navigation group with sub-items
+interface NavGroup {
+  label: string;
+  icon: string;
+  children: NavItem[];
+}
+
+// Union type for navigation entries
+type NavEntry = NavItem | NavGroup;
+
+// Type guard to check if entry is a group
+const isNavGroup = (entry: NavEntry): entry is NavGroup => {
+  return 'children' in entry;
+};
+
+// Navigation configuration
+const navConfig: NavEntry[] = [
   { path: '/admin', label: 'Home', icon: '🏠' },
-  { path: '/admin/employees', label: 'Employees', icon: '👥' },
-  { path: '/admin/suppliers', label: 'Suppliers', icon: '🏭' },
-  { path: '/admin/buyers', label: 'Buyers', icon: '🛒' },
+  {
+    label: 'Master Data',
+    icon: '📁',
+    children: [
+      { path: '/admin/employees', label: 'Employees', icon: '👥' },
+      { path: '/admin/suppliers', label: 'Suppliers', icon: '🏭' },
+      { path: '/admin/buyers', label: 'Buyers', icon: '🛒' },
+    ],
+  },
   { path: '/admin/coco-husk', label: 'Coco Husk', icon: '🥥' },
-  { path: '/admin/profile', label: 'Profile', icon: '👤' },
   { path: '/admin/employee-records', label: 'Employee Records', icon: '📝' },
+  { path: '/admin/profile', label: 'Profile', icon: '👤' },
 ];
 
 const AdminSidebar = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(['Master Data']); // Default expanded
 
   /**
    * Toggles sidebar collapsed state
    */
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
+  };
+
+  /**
+   * Toggles a group's expanded state
+   */
+  const toggleGroup = (label: string) => {
+    setExpandedGroups(prev =>
+      prev.includes(label)
+        ? prev.filter(g => g !== label)
+        : [...prev, label]
+    );
+  };
+
+  /**
+   * Checks if any child route in a group is active
+   */
+  const isGroupActive = (group: NavGroup): boolean => {
+    return group.children.some(child => location.pathname === child.path);
+  };
+
+  /**
+   * Renders a single navigation item
+   */
+  const renderNavItem = (item: NavItem, isChild = false) => (
+    <NavLink
+      to={item.path}
+      end={item.path === '/admin'}
+      className={({ isActive }) => `
+        flex items-center px-3 py-2.5 rounded-lg
+        transition-colors duration-200
+        ${isActive
+          ? 'bg-emerald-600 text-white'
+          : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+        }
+        ${isCollapsed ? 'justify-center' : 'space-x-3'}
+        ${isChild && !isCollapsed ? 'ml-4' : ''}
+      `}
+    >
+      <span className={`${isChild ? 'text-base' : 'text-xl'}`} role="img" aria-label={item.label}>
+        {item.icon}
+      </span>
+      {!isCollapsed && (
+        <span className={`font-medium ${isChild ? 'text-sm' : ''}`}>{item.label}</span>
+      )}
+    </NavLink>
+  );
+
+  /**
+   * Renders a navigation group with expandable children
+   */
+  const renderNavGroup = (group: NavGroup) => {
+    const isExpanded = expandedGroups.includes(group.label);
+    const hasActiveChild = isGroupActive(group);
+
+    return (
+      <div>
+        {/* Group Header */}
+        <button
+          onClick={() => !isCollapsed && toggleGroup(group.label)}
+          className={`
+            w-full flex items-center px-3 py-2.5 rounded-lg
+            transition-colors duration-200
+            ${hasActiveChild
+              ? 'bg-emerald-600/20 text-emerald-400'
+              : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+            }
+            ${isCollapsed ? 'justify-center' : 'justify-between'}
+          `}
+        >
+          <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
+            <span className="text-xl" role="img" aria-label={group.label}>
+              {group.icon}
+            </span>
+            {!isCollapsed && (
+              <span className="font-medium">{group.label}</span>
+            )}
+          </div>
+          {!isCollapsed && (
+            <svg
+              className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          )}
+        </button>
+
+        {/* Group Children */}
+        {!isCollapsed && isExpanded && (
+          <div className="mt-1 space-y-1">
+            {group.children.map((child) => (
+              <div key={child.path}>
+                {renderNavItem(child, true)}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Collapsed state - show children in tooltip or on hover */}
+        {isCollapsed && (
+          <div className="relative group">
+            <div className="absolute left-full top-0 ml-2 hidden group-hover:block z-50">
+              <div className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 px-1 min-w-[160px]">
+                <p className="px-3 py-1 text-xs text-slate-400 font-medium uppercase tracking-wider">
+                  {group.label}
+                </p>
+                {group.children.map((child) => (
+                  <NavLink
+                    key={child.path}
+                    to={child.path}
+                    className={({ isActive }) => `
+                      flex items-center px-3 py-2 rounded-md mx-1
+                      transition-colors duration-200
+                      ${isActive
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                      }
+                    `}
+                  >
+                    <span className="text-base mr-2">{child.icon}</span>
+                    <span className="text-sm">{child.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -86,30 +240,14 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 py-4 overflow-y-auto">
         <ul className="space-y-1 px-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                end={item.path === '/admin'}
-                className={({ isActive }) => `
-                  flex items-center px-3 py-3 rounded-lg
-                  transition-colors duration-200
-                  ${isActive
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                  }
-                  ${isCollapsed ? 'justify-center' : 'space-x-3'}
-                `}
-              >
-                <span className="text-xl" role="img" aria-label={item.label}>
-                  {item.icon}
-                </span>
-                {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-              </NavLink>
+          {navConfig.map((entry, index) => (
+            <li key={isNavGroup(entry) ? entry.label : entry.path}>
+              {isNavGroup(entry) 
+                ? renderNavGroup(entry) 
+                : renderNavItem(entry)
+              }
             </li>
           ))}
         </ul>
@@ -128,4 +266,3 @@ const AdminSidebar = () => {
 };
 
 export default AdminSidebar;
-
