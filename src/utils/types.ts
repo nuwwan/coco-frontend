@@ -48,6 +48,30 @@ export interface Buyer {
     updatedAt?: string;  // readonly
 }
 
+export interface EmployeebasicDetails {
+    id: number;
+    userId: number;
+    firstName: string;
+    lastName: string;
+    username: string;
+    position: string;
+    contactNumber: string;
+}
+
+export interface EmployeeRecord {
+    id?: number;
+    user: number;
+    year: number;
+    month: number;
+    day: number;
+    hours: string;
+    otHours: string;
+    remarks: string;
+    createdAt?: string;  // readonly
+    updatedAt?: string;  // readonly
+    createdBy: number;
+}
+
 export interface InputHuskLot {
     id?: number;
     supplier: number;

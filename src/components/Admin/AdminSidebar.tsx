@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   { path: '/admin/buyers', label: 'Buyers', icon: '🛒' },
   { path: '/admin/coco-husk', label: 'Coco Husk', icon: '🥥' },
   { path: '/admin/profile', label: 'Profile', icon: '👤' },
+  { path: '/admin/employee-records', label: 'Employee Records', icon: '📝' },
 ];
 
 const AdminSidebar = () => {

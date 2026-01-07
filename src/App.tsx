@@ -15,7 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 
 // Import admin pages
-import { AdminHome, Employees, Suppliers, Buyers, CocoHusk, Profile } from './pages/admin';
+import { AdminHome, Employees, Suppliers, Buyers, CocoHusk, Profile, EmployeeRecords } from './pages/admin';
 
 function App() {
   return (
@@ -50,6 +50,7 @@ function App() {
               <Route path="buyers" element={<Buyers />} />
               <Route path="coco-husk" element={<CocoHusk />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="employee-records" element={<EmployeeRecords />} />
             </Route>
             
             {/* 404 - Redirect unknown routes to home */}
