@@ -9,20 +9,7 @@ import { DataGrid, BadgeRenderer, AvatarRenderer } from '../../components/common
 import { EmployeeModal, DeleteConfirmModal } from '../../components/Admin/Employees';
 import employeeService, {  type CreateEmployeeData, type UpdateEmployeeData } from '../../services/employeeService';
 import type { Employee } from '../../utils/types';
-import { config } from '../../config/env';
 
-interface TableEmployee {
-  id: number;
-  name: string;
-  birth_date: string;
-  contact_number: string;
-  created_at: string;
-  gender: string;
-  hourly_rate: number;
-  is_active: boolean;
-  joined_date: string;
-  position: string;
-}
 
 const Employees = () => {
   // State

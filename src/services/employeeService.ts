@@ -4,7 +4,7 @@
  */
 
 import api, { type ApiResponse } from './api';
-import type { Employee } from '../utils/types';
+import type { Employee, EmployeebasicDetails } from '../utils/types';
 import { withSlash } from '../utils/utilFunctions';
 
 // ============================================
@@ -107,6 +107,15 @@ class EmployeeService {
    */
   async updateStatus(id: number, status: 'active' | 'inactive'): Promise<ApiResponse<Employee>> {
     return api.patch<Employee>(withSlash(`${this.basePath}/${id}/status`), { status });
+  }
+
+  /**
+   * Search employees by name, position, or contact
+   * @param query - Search query string
+   */
+  async search(query: string): Promise<ApiResponse<EmployeebasicDetails[]>> {
+    const url = withSlash(`${this.basePath}/search_employee_basic_details`);
+    return api.get<EmployeebasicDetails[]>(url, { params: { search: query } });
   }
 }
 
