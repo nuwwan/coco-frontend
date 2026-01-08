@@ -4,8 +4,8 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import { DataGrid } from '../../components/common';
+import type { ColDef } from 'ag-grid-community';
+import { DataGrid, ActionsRenderer } from '../../components/common';
 import { BuyerModal, DeleteBuyerModal } from '../../components/Admin/Buyers';
 import buyerService, { type CreateBuyerData } from '../../services/buyerService';
 import type { Buyer } from '../../utils/types';
@@ -140,37 +140,6 @@ const Buyers = () => {
   // Calculate summary stats
   const totalBuyers = buyers.length;
 
-  // Actions cell renderer
-  const ActionsRenderer = (props: ICellRendererParams<Buyer>) => {
-    const buyer = props.data;
-    if (!buyer) return null;
-
-    return (
-      <div className="flex items-center justify-end space-x-1">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openEditModal(buyer);
-          }}
-          className="text-slate-400 hover:text-white p-2 transition-colors"
-          title="Edit"
-        >
-          ✏️
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openDeleteModal(buyer);
-          }}
-          className="text-slate-400 hover:text-red-400 p-2 transition-colors"
-          title="Delete"
-        >
-          🗑️
-        </button>
-      </div>
-    );
-  };
-
   // AG Grid column definitions
   const columnDefs = useMemo<ColDef<Buyer>[]>(() => [
     {
@@ -212,6 +181,10 @@ const Buyers = () => {
       sortable: false,
       filter: false,
       cellRenderer: ActionsRenderer,
+      cellRendererParams: {
+        onEdit: (data: Buyer) => openEditModal(data),
+        onDelete: (data: Buyer) => openDeleteModal(data),
+      },
     },
   ], []);
 

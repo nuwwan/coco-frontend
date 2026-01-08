@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import { DataGrid, BadgeRenderer, AvatarRenderer } from '../../components/common';
+import { DataGrid, BadgeRenderer, AvatarRenderer, ActionsRenderer } from '../../components/common';
 import { EmployeeModal, DeleteConfirmModal } from '../../components/Admin/Employees';
 import employeeService, {  type CreateEmployeeData, type UpdateEmployeeData } from '../../services/employeeService';
 import type { Employee } from '../../utils/types';
@@ -173,37 +173,6 @@ const Employees = () => {
   const activeCount = employees.filter(emp => emp.isActive).length;
   const departmentCount = employees.filter(emp => emp.isActive).length; // TODO: Add department count
 
-  // Actions cell renderer
-  const ActionsRenderer = (props: ICellRendererParams<Employee>) => {
-    const employee = props.data;
-    if (!employee) return null;
-
-    return (
-      <div className="flex items-center justify-end space-x-1">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openEditModal(employee);
-          }}
-          className="text-slate-400 hover:text-white p-2 transition-colors"
-          title="Edit"
-        >
-          ✏️
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openDeleteModal(employee);
-          }}
-          className="text-slate-400 hover:text-red-400 p-2 transition-colors"
-          title="Delete"
-        >
-          🗑️
-        </button>
-      </div>
-    );
-  };
-
   // AG Grid column definitions
   const columnDefs = useMemo<ColDef<Employee>[]>(() => [
     {
@@ -253,6 +222,10 @@ const Employees = () => {
       sortable: false,
       filter: false,
       cellRenderer: ActionsRenderer,
+      cellRendererParams: {
+        onEdit: (data: Employee) => openEditModal(data),
+        onDelete: (data: Employee) => openDeleteModal(data),
+      },
     },
   ], []);
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import employeeRecordsService, { type CreateEmployeeRecordData } from "../../services/employeeRecordsService";
 import type { EmployeeRecord } from "../../utils/types";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { DataGrid } from '../../components/common';
+import { ActionsRenderer, DataGrid } from '../../components/common';
 import { EmployeeRecordModal, DeleteEmployeeRecordModal } from "../../components/Admin/EmployeeRecord";
 
 const EmployeeRecords = () => {
@@ -139,37 +139,6 @@ const EmployeeRecords = () => {
         return `User #${record.user} - ${months[record.month - 1]} ${record.day}, ${record.year} (${record.hours}h)`;
     };
 
-    // Actions cell renderer
-    const ActionsRenderer = (props: ICellRendererParams<EmployeeRecord>) => {
-        const employeeRecord = props.data;
-        if (!employeeRecord) return null;
-
-        return (
-            <div className="flex items-center justify-end space-x-1">
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(employeeRecord);
-                    }}
-                    className="text-slate-400 hover:text-white p-2 transition-colors"
-                    title="Edit"
-                >
-                    ✏️
-                </button>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(employeeRecord);
-                    }}
-                    className="text-slate-400 hover:text-red-400 p-2 transition-colors"
-                    title="Delete"
-                >
-                    🗑️
-                </button>
-            </div>
-        );
-    };
-
     // AG Grid column definitions
     const columnDefs = useMemo<ColDef<EmployeeRecord>[]>(() => [
         { field: 'id', headerName: 'ID', minWidth: 80, maxWidth: 100 },
@@ -194,7 +163,11 @@ const EmployeeRecords = () => {
             maxWidth: 100, 
             sortable: false, 
             filter: false, 
-            cellRenderer: ActionsRenderer 
+            cellRenderer: ActionsRenderer,
+            cellRendererParams: {
+                onEdit: (data: EmployeeRecord) => openEditModal(data),
+                onDelete: (data: EmployeeRecord) => openDeleteModal(data)
+            },
         },
     ], []);
 
