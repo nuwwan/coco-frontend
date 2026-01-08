@@ -43,7 +43,8 @@ const navConfig: NavEntry[] = [
   },
   { path: '/admin/coco-husk', label: 'Coco Husk', icon: '🥥' },
   { path: '/admin/employee-records', label: 'Employee Records', icon: '📝' },
-  { path: '/admin/profile', label: 'Profile', icon: '👤' },
+  { path: '/admin/expenses', label: 'Expenses', icon: '💰' },
+  { path: '/admin/profile', label: 'Profile', icon: '👤' }
 ];
 
 const AdminSidebar = () => {
