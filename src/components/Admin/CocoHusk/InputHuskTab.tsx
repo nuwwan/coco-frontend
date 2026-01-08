@@ -4,9 +4,8 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import { DataGrid, BadgeRenderer, CurrencyRenderer, QuantityRenderer } from '../../common';
-// Import modals from InputCocoHusk folder
+import type { ColDef } from 'ag-grid-community';
+import { DataGrid, BadgeRenderer, CurrencyRenderer, QuantityRenderer, ActionsRenderer } from '../../common';
 import { InputCocohuskModal, DeleteInputCocoHuskModal } from '../InputCocoHusk';
 import inputHuskService from '../../../services/inputhuskService';
 import type { InputHuskLot, CreateInputHuskLot } from '../../../utils/types';
@@ -143,37 +142,6 @@ const InputHuskTab = () => {
   const totalValue = lots.reduce((sum, lot) => sum + parseFloat(lot.grossCost || '0'), 0);
   const totalLots = lots.length;
 
-  // Actions cell renderer
-  const ActionsRenderer = (props: ICellRendererParams<InputHuskLot>) => {
-    const lot = props.data;
-    if (!lot) return null;
-
-    return (
-      <div className="flex items-center justify-end space-x-1">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openEditModal(lot);
-          }}
-          className="text-slate-400 hover:text-white p-2 transition-colors"
-          title="Edit"
-        >
-          ✏️
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openDeleteModal(lot);
-          }}
-          className="text-slate-400 hover:text-red-400 p-2 transition-colors"
-          title="Delete"
-        >
-          🗑️
-        </button>
-      </div>
-    );
-  };
-
   // AG Grid column definitions
   const columnDefs = useMemo<ColDef<InputHuskLot>[]>(() => [
     {
@@ -234,6 +202,10 @@ const InputHuskTab = () => {
       sortable: false,
       filter: false,
       cellRenderer: ActionsRenderer,
+      cellRendererParams: {
+        onEdit: (data: InputHuskLot) => openEditModal(data),
+        onDelete: (data: InputHuskLot) => openDeleteModal(data),
+      },
     },
   ], []);
 
