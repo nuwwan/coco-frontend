@@ -102,3 +102,18 @@ export interface CreateInputHuskLot {
     otherCosts: string;
     remarks: string;
 }
+
+export interface Expense {
+    id?: number;
+    title: string;
+    expenseType: string;
+    year: number;
+    month: number;
+    day: number;
+    cost: string;
+    status: string;
+    remarks: string;
+    createdAt?: string;  // readonly
+    updatedAt?: string;  // readonly
+    createdBy: number;
+}
