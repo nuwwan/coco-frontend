@@ -81,6 +81,16 @@ class BuyerService {
   async delete(id: number): Promise<ApiResponse<void>> {
     return api.delete<void>(withSlash(`${this.basePath}/${id}`));
   }
+
+  /**
+   * Search for buyers
+   * @param query - Search query
+   */
+  async search(query: string): Promise<ApiResponse<BuyerListResponse>> {
+    const path=`${this.basePath}/search_buyer_list`;
+    const params: Record<string, string> = { search: query };
+    return api.get<BuyerListResponse>(withSlash(path), { params });
+  }
 }
 
 // Export singleton instance

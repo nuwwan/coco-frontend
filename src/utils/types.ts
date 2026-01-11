@@ -103,6 +103,32 @@ export interface CreateInputHuskLot {
     remarks: string;
 }
 
+export interface OutputOrder {
+    id: number;
+    buyer: number;
+    date: string;
+    pricePerKg: string;
+    quantityKg: number;
+    loadUnloadCost: string;
+    transportCost: string;
+    otherCosts: string;
+    totalRevenue: string;
+    remarks: string;
+    createdBy: number;
+    createdAt: string;
+}
+
+export interface CreateOutputOrder {
+    buyer: number;
+    date: string;
+    pricePerKg: string;
+    quantityKg: number;
+    loadUnloadCost: string;
+    transportCost: string;
+    otherCosts: string;
+    remarks: string;
+}
+
 export interface Expense {
     id?: number;
     title: string;
@@ -126,21 +152,21 @@ export interface DashboardStats {
     total_suppliers: number;
     total_buyers: number;
     last_12_months_summary: Last12MonthsSummary;
-  }
-  
-  /**
-   * Monthly data containers. 
-   * The keys are date strings (YYYY-M-D) and values are numerical metrics.
-   */
-  export interface Last12MonthsSummary {
+}
+
+/**
+ * Monthly data containers. 
+ * The keys are date strings (YYYY-M-D) and values are numerical metrics.
+ */
+export interface Last12MonthsSummary {
     total_input_husk_quantity: MonthlyData;
     total_input_husk_costs: MonthlyData;
     total_expenses: MonthlyData;
     total_employee_hours: MonthlyData;
-  }
-  
-  /**
-   * A utility type for dynamic date-based keys.
-   * Example: { "2025-12-1": 3000, "2026-1-1": 900 }
-   */
-  export type MonthlyData = Record<string, number>;
+}
+
+/**
+ * A utility type for dynamic date-based keys.
+ * Example: { "2025-12-1": 3000, "2026-1-1": 900 }
+ */
+export type MonthlyData = Record<string, number>;
