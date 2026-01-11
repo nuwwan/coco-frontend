@@ -3,166 +3,158 @@
  * Manages output husk lot orders with AG Grid
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ColDef } from 'ag-grid-community';
-import { DataGrid, BadgeRenderer, CurrencyRenderer, QuantityRenderer } from '../../common';
-import OutputHuskModal from './OutputHuskModal';
+import { DataGrid, CurrencyRenderer, QuantityRenderer, ActionsRenderer } from '../../common';
+import OutputOrderModal from './OutputOrderModal';
+import outputOrderService from '../../../services/outputOrderService';
+import type { CreateOutputOrder, InputHuskLot, OutputOrder } from '../../../utils/types';
+import DeleteOutputOrderModal from './DeleteOutputOrderModal';
 
-// Output husk lot interface
-export interface OutputHuskLot {
-  id: number;
-  lotNumber: string;
-  customerName: string;
-  quantity: number;
-  unit: string;
-  pricePerUnit: number;
-  totalPrice: number;
-  shippedDate: string;
-  productType: 'fiber' | 'chips' | 'peat' | 'mixed';
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  notes?: string;
-}
-
-// Mock data - replace with API data
-const mockOutputLots: OutputHuskLot[] = [
-  {
-    id: 1,
-    lotNumber: 'OUT-2024-001',
-    customerName: 'Garden Center Ltd.',
-    quantity: 200,
-    unit: 'kg',
-    pricePerUnit: 45,
-    totalPrice: 9000,
-    shippedDate: '2024-12-28',
-    productType: 'fiber',
-    status: 'delivered',
-  },
-  {
-    id: 2,
-    lotNumber: 'OUT-2024-002',
-    customerName: 'Organic Farms Inc.',
-    quantity: 500,
-    unit: 'kg',
-    pricePerUnit: 35,
-    totalPrice: 17500,
-    shippedDate: '2024-12-27',
-    productType: 'chips',
-    status: 'shipped',
-  },
-  {
-    id: 3,
-    lotNumber: 'OUT-2024-003',
-    customerName: 'Green Thumb Nursery',
-    quantity: 150,
-    unit: 'kg',
-    pricePerUnit: 50,
-    totalPrice: 7500,
-    shippedDate: '2024-12-26',
-    productType: 'peat',
-    status: 'processing',
-  },
-  {
-    id: 4,
-    lotNumber: 'OUT-2024-004',
-    customerName: 'Hydroponic Solutions',
-    quantity: 300,
-    unit: 'kg',
-    pricePerUnit: 40,
-    totalPrice: 12000,
-    shippedDate: '2024-12-25',
-    productType: 'mixed',
-    status: 'pending',
-  },
-  {
-    id: 5,
-    lotNumber: 'OUT-2024-005',
-    customerName: 'EcoGrow Industries',
-    quantity: 600,
-    unit: 'kg',
-    pricePerUnit: 38,
-    totalPrice: 22800,
-    shippedDate: '2024-12-24',
-    productType: 'fiber',
-    status: 'delivered',
-  },
-  {
-    id: 6,
-    lotNumber: 'OUT-2024-006',
-    customerName: 'Urban Gardens Co.',
-    quantity: 250,
-    unit: 'kg',
-    pricePerUnit: 42,
-    totalPrice: 10500,
-    shippedDate: '2024-12-23',
-    productType: 'peat',
-    status: 'cancelled',
-  },
-];
 
 const OutputHuskTab = () => {
-  const [lots, setLots] = useState<OutputHuskLot[]>(mockOutputLots);
+  const [lots, setLots] = useState<OutputOrder[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<OutputOrder | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Calculate summary stats
-  const totalQuantity = lots.reduce((sum, lot) => sum + lot.quantity, 0);
-  const totalRevenue = lots.reduce((sum, lot) => sum + lot.totalPrice, 0);
-  const pendingCount = lots.filter(lot => lot.status === 'pending' || lot.status === 'processing').length;
+  const totalQuantity = lots.reduce((sum, lot) => sum + lot.quantityKg, 0);
+  const totalRevenue = lots.reduce((sum, lot) => sum + parseFloat(lot.totalRevenue), 0);
+  const ordersCount = lots.length;
+
+  const fetchOrders = useCallback(async () => {
+    const response = await outputOrderService.getAll();
+    setLots(response.data.results);
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // AG Grid column definitions
-  const columnDefs = useMemo<ColDef<OutputHuskLot>[]>(() => [
+  const columnDefs = useMemo<ColDef<OutputOrder>[]>(() => [
     {
-      field: 'lotNumber',
-      headerName: 'Lot Number',
+      field: 'id',
+      headerName: 'ID',
+      minWidth: 100,
+      cellClass: 'font-mono text-white',
+    },
+    {
+      field: 'buyer',
+      headerName: 'Buyer',
       minWidth: 140,
       cellClass: 'font-mono text-white',
     },
     {
-      field: 'customerName',
-      headerName: 'Customer',
+      field: 'date',
+      headerName: 'Date',
       minWidth: 180,
     },
     {
-      field: 'quantity',
-      headerName: 'Quantity',
+      field: 'pricePerKg',
+      headerName: 'Price Per Kg',
       minWidth: 120,
       cellRenderer: QuantityRenderer,
-      cellRendererParams: { unitField: 'unit' },
     },
     {
-      field: 'totalPrice',
-      headerName: 'Revenue',
+      field: 'quantityKg',
+      headerName: 'Quantity (Kg)',
       minWidth: 120,
       cellRenderer: CurrencyRenderer,
     },
     {
-      field: 'shippedDate',
-      headerName: 'Ship Date',
+      field: 'loadUnloadCost',
+      headerName: 'Load Unload Cost',
       minWidth: 120,
+      cellRenderer: CurrencyRenderer,
     },
     {
-      field: 'productType',
-      headerName: 'Product',
+      field: 'transportCost',
+      headerName: 'Transport Cost',
       minWidth: 100,
-      cellRenderer: BadgeRenderer,
+      cellRenderer: CurrencyRenderer,
     },
     {
-      field: 'status',
-      headerName: 'Status',
+      field: 'otherCosts',
+      headerName: 'Other Costs',
       minWidth: 110,
-      cellRenderer: BadgeRenderer,
+      cellRenderer: CurrencyRenderer,
     },
+    {
+      field: 'totalRevenue',
+      headerName: 'Total Revenue',
+      minWidth: 110,
+      cellRenderer: CurrencyRenderer,
+    },
+    {
+      headerName: 'Actions',
+      minWidth: 100,
+      maxWidth: 100,
+      sortable: false,
+      filter: false,
+      cellRenderer: ActionsRenderer,
+      cellRendererParams: {
+        onEdit: (data: OutputOrder) => openEditModal(data),
+        onDelete: (data: OutputOrder) => openDeleteModal(data),
+      },
+    }
   ], []);
 
   /**
    * Handles adding a new output lot
    */
-  const handleAddLot = (newLot: Omit<OutputHuskLot, 'id'>) => {
-    const lot: OutputHuskLot = {
-      ...newLot,
-      id: lots.length + 1,
-    };
-    setLots([lot, ...lots]);
-    setIsModalOpen(false);
+  const handleCreateOrder = async (data: CreateOutputOrder) => {
+    setIsSubmitting(true);
+
+    try {
+      const response = await outputOrderService.create(data);
+      setLots(prev => [response.data, ...prev]);
+      setIsModalOpen(false);
+    } catch (err) {
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to create output husk lot';
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Opens the edit modal
+   */
+  const openEditModal = (order: OutputOrder) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
+  /**
+   * Opens the delete confirmation modal
+   */
+  const openDeleteModal = (order: OutputOrder) => {
+    setSelectedOrder(order);
+    setIsDeleteModalOpen(true);
+  };
+
+  /**
+   * Handles deleting an output order
+   */
+  const handleDeleteOrderConfirm = async () => {
+    try {
+      if (!selectedOrder?.id) return;
+      await outputOrderService.delete(selectedOrder.id);
+      setLots(prev => prev.filter(lot => lot.id !== selectedOrder.id));
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const openCreateModal = () => {
+    setSelectedOrder(null);
+    setIsModalOpen(true);
   };
 
   return (
@@ -178,25 +170,25 @@ const OutputHuskTab = () => {
           <p className="text-2xl font-bold text-emerald-400">${totalRevenue.toLocaleString()}</p>
         </div>
         <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
-          <p className="text-slate-400 text-sm">Pending / Processing</p>
-          <p className="text-2xl font-bold text-amber-400">{pendingCount}</p>
+          <p className="text-slate-400 text-sm">Total Orders</p>
+          <p className="text-2xl font-bold text-amber-400">{ordersCount}</p>
         </div>
       </div>
 
       {/* Actions Bar */}
       <div className="flex justify-end mb-4">
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={openCreateModal}
           className="btn-primary flex items-center space-x-2"
         >
           <span>+</span>
-          <span>Create Output Lot</span>
+          <span>Create Output Order</span>
         </button>
       </div>
 
       {/* AG Grid Table */}
       <div className="card bg-slate-800/50 backdrop-blur border border-slate-700 p-0 overflow-hidden">
-        <DataGrid<OutputHuskLot>
+        <DataGrid<OutputOrder>
           rowData={lots}
           columnDefs={columnDefs}
           height="450px"
@@ -205,11 +197,22 @@ const OutputHuskTab = () => {
         />
       </div>
 
-      {/* Create Output Lot Modal */}
-      <OutputHuskModal
+      {/* Create Output Order Modal */}
+      <OutputOrderModal
+        outputOrder={selectedOrder}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddLot}
+        onSubmit={handleCreateOrder}
+        isLoading={isSubmitting}
+      />
+
+      {/* Delete Output Order Confirmation Modal */}
+      <DeleteOutputOrderModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteOrderConfirm}
+        isLoading={isSubmitting}
+        orderId={selectedOrder?.id}
       />
     </div>
   );

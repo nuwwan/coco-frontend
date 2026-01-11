@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import InputHuskTab from '../../components/Admin/CocoHusk/InputHuskTab';
+import InputHuskTab from '../../components/Admin/CocoHusk/InputOrderTab';
 import OutputHuskTab from '../../components/Admin/CocoHusk/OutputHuskTab';
 
 // Tab type definition
