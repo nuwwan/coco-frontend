@@ -157,6 +157,9 @@ const SalaryPayments = () => {
         { field: 'day', headerName: 'Day', minWidth: 80 },
         { field: 'salary', headerName: 'Salary', minWidth: 100 },
         { field: 'remarks', headerName: 'Remarks', minWidth: 150, flex: 1 },
+        { field: 'status', headerName: 'Status', minWidth: 100, valueFormatter: (params) => {
+            return params.value === 'pending' ? 'Pending' : params.value === 'paid' ? 'Paid' : 'Cancelled';
+        } },
         { 
             headerName: 'Actions', 
             minWidth: 100, 

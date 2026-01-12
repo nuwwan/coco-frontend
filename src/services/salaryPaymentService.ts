@@ -16,6 +16,7 @@ export interface CreateSalaryPaymentData {
     year: number;
     salary: string;
     remarks: string;
+    status: string;
 }
 
 class SalaryPaymentService {

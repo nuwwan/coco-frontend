@@ -179,6 +179,7 @@ export interface SalaryPayment {
     year: number;
     salary: string;
     remarks: string;
+    status: string;
     createdAt?: string;  // readonly
     updatedAt?: string;  // readonly
     createdBy: number;

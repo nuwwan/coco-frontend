@@ -30,6 +30,7 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
     year: new Date().getFullYear(),
     salary: '',
     remarks: '',
+    status: 'pending',
   });
 
   const [error, setError] = useState('');
@@ -43,6 +44,7 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
         day: salaryPayment.day || new Date().getDate(),
         salary: salaryPayment.salary || '',
         remarks: salaryPayment.remarks || '',
+        status: salaryPayment.status || 'pending',
       });
 
       // Set salary payment placeholder for edit mode (ID only from salaryPayment)
@@ -65,6 +67,7 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
         day: new Date().getDate(),
         salary: '',
         remarks: '',
+        status: 'pending',
       });
       setSelectedEmployee(null);
     }
@@ -115,6 +118,9 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
     if (!formData.salary || parseFloat(formData.salary) < 0) {
       return 'Please enter valid amount';
     }
+    if (!formData.status) {
+      return 'Please select a status';
+    }
     return null;
   };
 
@@ -137,6 +143,7 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
       year: formData.year,
       salary: formData.salary,
       remarks: formData.remarks,
+      status: formData.status,
     } 
 
     onSubmit(submitData);
@@ -278,7 +285,7 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
             </h3>
           </div>
 
-          {/* Hours and OT Hours */}
+          {/* Salary */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -294,6 +301,16 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
                 step="0.5"
                 className="input-field bg-slate-700 border-slate-600 text-white placeholder-slate-400"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Status *
+              </label>
+              <select name="status" value={formData.status} onChange={handleChange} className="input-field bg-slate-700 border-slate-600 text-white">
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
           </div>
 
