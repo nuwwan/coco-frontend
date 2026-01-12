@@ -170,3 +170,17 @@ export interface Last12MonthsSummary {
  * Example: { "2025-12-1": 3000, "2026-1-1": 900 }
  */
 export type MonthlyData = Record<string, number>;
+
+export interface SalaryPayment {
+    id?: number;
+    user: number;
+    day: number;
+    month: number;
+    year: number;
+    salary: string;
+    remarks: string;
+    status: string;
+    createdAt?: string;  // readonly
+    updatedAt?: string;  // readonly
+    createdBy: number;
+}

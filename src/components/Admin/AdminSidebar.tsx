@@ -41,9 +41,16 @@ const navConfig: NavEntry[] = [
       { path: '/admin/buyers', label: 'Buyers', icon: '🛒' },
     ],
   },
+  {
+    label: 'Payments',
+    icon: '💰',
+    children: [
+      { path: '/admin/salary-payments', label: 'Salary Payments', icon: '💰' },
+      { path: '/admin/expenses', label: 'Expenses', icon: '💰' },
+    ],
+  },
   { path: '/admin/coco-husk', label: 'Coco Husk', icon: '🥥' },
   { path: '/admin/employee-records', label: 'Employee Records', icon: '📝' },
-  { path: '/admin/expenses', label: 'Expenses', icon: '💰' },
   { path: '/admin/profile', label: 'Profile', icon: '👤' }
 ];
 
