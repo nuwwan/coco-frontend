@@ -24,9 +24,8 @@ const EmployeeRecordModal = ({ isOpen, onClose, onSubmit, employeeRecord, isLoad
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeebasicDetails | null>(null);
 
   const [formData, setFormData] = useState({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-    day: new Date().getDate(),
+    date: new Date().toISOString(),
+    isPaid: false,
     hours: '',
     otHours: '0',
     remarks: '',
@@ -38,9 +37,8 @@ const EmployeeRecordModal = ({ isOpen, onClose, onSubmit, employeeRecord, isLoad
   useEffect(() => {
     if (employeeRecord) {
       setFormData({
-        year: employeeRecord.year || new Date().getFullYear(),
-        month: employeeRecord.month || new Date().getMonth() + 1,
-        day: employeeRecord.day || new Date().getDate(),
+        date: employeeRecord.date ? new Date(employeeRecord.date).toISOString() : new Date().toISOString(),
+        isPaid: employeeRecord.isPaid || false,
         hours: employeeRecord.hours || '',
         otHours: employeeRecord.otHours || '0',
         remarks: employeeRecord.remarks || '',
@@ -61,9 +59,8 @@ const EmployeeRecordModal = ({ isOpen, onClose, onSubmit, employeeRecord, isLoad
     } else {
       // Reset form for create mode
       setFormData({
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-        day: new Date().getDate(),
+        date: new Date().toISOString(),
+        isPaid: false,
         hours: '',
         otHours: '0',
         remarks: '',
@@ -105,14 +102,8 @@ const EmployeeRecordModal = ({ isOpen, onClose, onSubmit, employeeRecord, isLoad
     if (!isEditMode && !selectedEmployee) {
       return 'Please search and select an employee first';
     }
-    if (!formData.year || formData.year < 2000 || formData.year > 2100) {
-      return 'Please enter a valid year (2000-2100)';
-    }
-    if (!formData.month || formData.month < 1 || formData.month > 12) {
-      return 'Please enter a valid month (1-12)';
-    }
-    if (!formData.day || formData.day < 1 || formData.day > 31) {
-      return 'Please enter a valid day (1-31)';
+    if (!formData.date) {
+      return 'Please enter a valid date';
     }
     if (!formData.hours || parseFloat(formData.hours) < 0) {
       return 'Please enter valid hours';
@@ -134,9 +125,8 @@ const EmployeeRecordModal = ({ isOpen, onClose, onSubmit, employeeRecord, isLoad
 
     const submitData: CreateEmployeeRecordData = {
       user: selectedEmployee?.userId || employeeRecord?.user || 0,
-      year: formData.year,
-      month: formData.month,
-      day: formData.day,
+      date: formData.date,
+      isPaid: formData.isPaid,
       hours: formData.hours,
       otHours: formData.otHours,
       remarks: formData.remarks,
@@ -231,44 +221,15 @@ const EmployeeRecordModal = ({ isOpen, onClose, onSubmit, employeeRecord, isLoad
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Year *
+                Date *
               </label>
               <input
-                type="number"
-                name="year"
-                value={formData.year}
+                type="date"
+                name="date"
+                value={formData.date}
                 onChange={handleChange}
                 min="2000"
                 max="2100"
-                className="input-field bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Month *
-              </label>
-              <select
-                name="month"
-                value={formData.month}
-                onChange={handleChange}
-                className="input-field bg-slate-700 border-slate-600 text-white"
-              >
-                {months.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Day *
-              </label>
-              <input
-                type="number"
-                name="day"
-                value={formData.day}
-                onChange={handleChange}
-                min="1"
-                max="31"
                 className="input-field bg-slate-700 border-slate-600 text-white"
               />
             </div>

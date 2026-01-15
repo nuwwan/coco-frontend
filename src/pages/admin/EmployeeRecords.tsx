@@ -135,28 +135,20 @@ const EmployeeRecords = () => {
      */
     const getRecordInfo = (record: EmployeeRecord | null): string => {
         if (!record) return '';
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `User #${record.user} - ${months[record.month - 1]} ${record.day}, ${record.year} (${record.hours}h)`;
+        return `User #${record.user} - ${record.date} (${record.hours}h)`;
     };
 
     // AG Grid column definitions
     const columnDefs = useMemo<ColDef<EmployeeRecord>[]>(() => [
         { field: 'id', headerName: 'ID', minWidth: 80, maxWidth: 100 },
         { field: 'user', headerName: 'User ID', minWidth: 100 },
-        { field: 'year', headerName: 'Year', minWidth: 100 },
-        { 
-            field: 'month', 
-            headerName: 'Month', 
-            minWidth: 100,
-            valueFormatter: (params) => {
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                return months[params.value - 1] || params.value;
-            }
-        },
-        { field: 'day', headerName: 'Day', minWidth: 80 },
+        {field: 'date', headerName: 'Date', minWidth: 100 },
         { field: 'hours', headerName: 'Hours', minWidth: 100 },
         { field: 'otHours', headerName: 'OT Hours', minWidth: 100 },
         { field: 'remarks', headerName: 'Remarks', minWidth: 150, flex: 1 },
+        { field: 'isPaid', headerName: 'Paid', minWidth: 100, valueFormatter: (params) => {
+            return params.value ? 'Yes' : 'No';
+        } },
         { 
             headerName: 'Actions', 
             minWidth: 100, 

@@ -29,21 +29,6 @@ const statusOptions = [
   { value: 'cancelled', label: 'Cancelled' }
 ];
 
-// Month options
-const months = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
-];
 
 const ExpenseModal = ({ isOpen, onClose, onSubmit, expense, isLoading = false }: ExpenseModalProps) => {
   const isEditMode = !!expense;
@@ -51,9 +36,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, expense, isLoading = false }:
   const [formData, setFormData] = useState<CreateExpenseData>({
     title: '',
     expenseType: '',
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-    day: new Date().getDate(),
+    date: new Date().toISOString(),
     cost: '',
     status: 'pending',
     remarks: '',
@@ -67,9 +50,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, expense, isLoading = false }:
       setFormData({
         title: expense.title || '',
         expenseType: expense.expenseType || '',
-        year: expense.year || new Date().getFullYear(),
-        month: expense.month || new Date().getMonth() + 1,
-        day: expense.day || new Date().getDate(),
+        date: expense.date || new Date().toISOString(),
         cost: expense.cost || '',
         status: expense.status || 'pending',
         remarks: expense.remarks || '',
@@ -78,9 +59,7 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, expense, isLoading = false }:
       setFormData({
         title: '',
         expenseType: '',
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-        day: new Date().getDate(),
+        date: new Date().toISOString(),
         cost: '',
         status: 'pending',
         remarks: '',
@@ -112,14 +91,8 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, expense, isLoading = false }:
   const validateForm = (): string | null => {
     if (!formData.title.trim()) return 'Title is required';
     if (!formData.expenseType) return 'Expense type is required';
-    if (!formData.year || formData.year < 2000 || formData.year > 2100) {
-      return 'Please enter a valid year (2000-2100)';
-    }
-    if (!formData.month || formData.month < 1 || formData.month > 12) {
-      return 'Please select a valid month';
-    }
-    if (!formData.day || formData.day < 1 || formData.day > 31) {
-      return 'Please enter a valid day (1-31)';
+    if (!formData.date) {
+      return 'Please enter a valid date';
     }
     if (!formData.cost || parseFloat(formData.cost) <= 0) {
       return 'Cost must be greater than 0';
@@ -254,44 +227,13 @@ const ExpenseModal = ({ isOpen, onClose, onSubmit, expense, isLoading = false }:
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Year *
+                Date *
               </label>
               <input
-                type="number"
-                name="year"
-                value={formData.year}
+                type="date"
+                name="date"
+                value={formData.date}
                 onChange={handleChange}
-                min="2000"
-                max="2100"
-                className="input-field bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Month *
-              </label>
-              <select
-                name="month"
-                value={formData.month}
-                onChange={handleChange}
-                className="input-field bg-slate-700 border-slate-600 text-white"
-              >
-                {months.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Day *
-              </label>
-              <input
-                type="number"
-                name="day"
-                value={formData.day}
-                onChange={handleChange}
-                min="1"
-                max="31"
                 className="input-field bg-slate-700 border-slate-600 text-white"
               />
             </div>

@@ -14,9 +14,7 @@ import { withSlash } from '../utils/utilFunctions';
 export interface CreateExpenseData {
   title: string;
   expenseType: string;
-  year: number;
-  month: number;
-  day: number;
+  date: string;
   cost: string;
   status: string;
   remarks: string;

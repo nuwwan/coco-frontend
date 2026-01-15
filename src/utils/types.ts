@@ -61,10 +61,9 @@ export interface EmployeebasicDetails {
 export interface EmployeeRecord {
     id?: number;
     user: number;
-    year: number;
-    month: number;
-    day: number;
+    date: string;
     hours: string;
+    isPaid: boolean;
     otHours: string;
     remarks: string;
     createdAt?: string;  // readonly
@@ -133,9 +132,7 @@ export interface Expense {
     id?: number;
     title: string;
     expenseType: string;
-    year: number;
-    month: number;
-    day: number;
+    date: string;
     cost: string;
     status: string;
     remarks: string;
@@ -174,9 +171,8 @@ export type MonthlyData = Record<string, number>;
 export interface SalaryPayment {
     id?: number;
     user: number;
-    day: number;
-    month: number;
-    year: number;
+    startDate: string;
+    endDate: string;
     salary: string;
     remarks: string;
     status: string;
