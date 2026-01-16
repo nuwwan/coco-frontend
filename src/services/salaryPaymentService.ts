@@ -11,12 +11,16 @@ export interface SalaryPaymentListResponse {
 
 export interface CreateSalaryPaymentData {
     user: number;
-    day: number;
-    month: number;
-    year: number;
+    startDate: string;
+    endDate: string;
     salary: string;
     remarks: string;
     status: string;
+}
+
+export interface SalaryPaymentStats {
+    totalPaid: number;
+    totalPending: number;
 }
 
 class SalaryPaymentService {
@@ -45,6 +49,14 @@ class SalaryPaymentService {
 
     async delete(id: number): Promise<ApiResponse<void>> {
         return api.delete<void>(withSlash(`${this.basePath}/${id}`));
+    }
+
+    async getSalarypaymentsStats(year: number, month: number): Promise<ApiResponse<SalaryPaymentStats>> {
+        const params: Record<string, string | number> = {};
+        if (year !== undefined) params.year = year;
+        if (month !== undefined) params.month = month;
+        const url:string = withSlash(`${this.basePath}/stats`);
+        return api.get<SalaryPaymentStats>(url, { params });
     }
 }
 

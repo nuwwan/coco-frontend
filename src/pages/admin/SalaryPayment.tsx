@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type {  SalaryPayment } from "../../utils/types";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { ActionsRenderer, DataGrid } from '../../components/common';
-import { salaryPaymentService, type CreateSalaryPaymentData } from "../../services/salaryPaymentService";
+import { salaryPaymentService, type CreateSalaryPaymentData, type SalaryPaymentStats } from "../../services/salaryPaymentService";
 import SalaryPaymentModal from "../../components/Admin/SalaryPayment/SalaryPaymentModal";
 import DeleteSalaryPaymentModal from "../../components/Admin/SalaryPayment/DeleteSalaryPaymentModal";
 
@@ -11,6 +11,7 @@ const SalaryPayments = () => {
     const [salaryPayments, setSalaryPayments] = useState<SalaryPayment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [salaryPaymentsStats, setSalaryPaymentsStats] = useState<SalaryPaymentStats | null>(null);
 
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,9 +38,26 @@ const SalaryPayments = () => {
         }
     }, []);
 
+    const fetchSalaryPaymentsStats = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await salaryPaymentService.getSalarypaymentsStats(new Date().getFullYear(), new Date().getMonth() + 1);
+            setSalaryPaymentsStats(response.data);
+        } catch (err) {
+            const errorMessage = err && typeof err === 'object' && 'message' in err
+                ? (err as { message: string }).message
+                : 'Failed to fetch salary payments stats';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchSalaryPayments();
-    }, [fetchSalaryPayments]);
+        fetchSalaryPaymentsStats();
+    }, [fetchSalaryPayments, fetchSalaryPaymentsStats]);
 
     /**
      * Opens the create modal
@@ -136,25 +154,22 @@ const SalaryPayments = () => {
      */
     const getSalaryPaymentInfo = (record: SalaryPayment | null): string => {
         if (!record) return '';
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `User #${record.user} - ${months[record.month - 1]} ${record.day}, ${record.year} (${record.salary})`;
+        return `User #${record.user} - ${new Date(record.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} - ${new Date(record.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} (${record.salary})`;
     };
 
     // AG Grid column definitions
     const columnDefs = useMemo<ColDef<SalaryPayment>[]>(() => [
         { field: 'id', headerName: 'ID', minWidth: 80, maxWidth: 100 },
         { field: 'user', headerName: 'User ID', minWidth: 100 },
-        { field: 'year', headerName: 'Year', minWidth: 100 },
+        { field: 'startDate', headerName: 'Start Date', minWidth: 100 },
         { 
-            field: 'month', 
-            headerName: 'Month', 
+            field: 'endDate', 
+            headerName: 'End Date', 
             minWidth: 100,
             valueFormatter: (params) => {
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                return months[params.value - 1] || params.value;
+                return new Date(params.value).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             }
         },
-        { field: 'day', headerName: 'Day', minWidth: 80 },
         { field: 'salary', headerName: 'Salary', minWidth: 100 },
         { field: 'remarks', headerName: 'Remarks', minWidth: 150, flex: 1 },
         { field: 'status', headerName: 'Status', minWidth: 100, valueFormatter: (params) => {
@@ -174,9 +189,6 @@ const SalaryPayments = () => {
         },
     ], []);
 
-    // Calculate summary stats
-    const totalRecords = salaryPayments.length;
-    const totalSalary = salaryPayments.reduce((sum, r) => sum + parseFloat(r.salary || '0'), 0);
 
     return (
         <div className="p-6 lg:p-8">
@@ -217,12 +229,12 @@ const SalaryPayments = () => {
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
-                    <p className="text-slate-400 text-sm">Total Salary Payments</p>
-                    <p className="text-2xl font-bold text-white">{totalRecords}</p>
+                    <p className="text-slate-400 text-sm">Total Salary Paid</p>
+                    <p className="text-2xl font-bold text-emerald-400">{salaryPaymentsStats?.totalPaid}</p>
                 </div>
                 <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
-                    <p className="text-slate-400 text-sm">Total Salary</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totalSalary.toFixed(2)}</p>
+                    <p className="text-slate-400 text-sm">Total Salary Pending</p>
+                    <p className="text-2xl font-bold text-white">{salaryPaymentsStats?.totalPending}</p>
                 </div>
             </div>
 

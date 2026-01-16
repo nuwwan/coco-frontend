@@ -25,9 +25,8 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeebasicDetails | null>(null);
 
   const [formData, setFormData] = useState({
-    day: new Date().getDate(),
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
     salary: '',
     remarks: '',
     status: 'pending',
@@ -39,9 +38,8 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
   useEffect(() => {
     if (salaryPayment) {
       setFormData({
-        year: salaryPayment.year || new Date().getFullYear(),
-        month: salaryPayment.month || new Date().getMonth() + 1,
-        day: salaryPayment.day || new Date().getDate(),
+        startDate: salaryPayment.startDate || new Date().toISOString(),
+        endDate: salaryPayment.endDate || new Date().toISOString(),
         salary: salaryPayment.salary || '',
         remarks: salaryPayment.remarks || '',
         status: salaryPayment.status || 'pending',
@@ -62,9 +60,8 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
     } else {
       // Reset form for create mode
       setFormData({
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-        day: new Date().getDate(),
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
         salary: '',
         remarks: '',
         status: 'pending',
@@ -106,14 +103,8 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
     if (!isEditMode && !selectedEmployee) {
       return 'Please search and select an employee first';
     }
-    if (!formData.year || formData.year < 2000 || formData.year > 2100) {
-      return 'Please enter a valid year (2000-2100)';
-    }
-    if (!formData.month || formData.month < 1 || formData.month > 12) {
-      return 'Please enter a valid month (1-12)';
-    }
-    if (!formData.day || formData.day < 1 || formData.day > 31) {
-      return 'Please enter a valid day (1-31)';
+    if (!formData.startDate || !formData.endDate) {
+      return 'Please enter a valid start and end date';
     }
     if (!formData.salary || parseFloat(formData.salary) < 0) {
       return 'Please enter valid amount';
@@ -138,9 +129,8 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
 
     const submitData: CreateSalaryPaymentData = {
       user: selectedEmployee?.userId || 0,
-      day: formData.day,
-      month: formData.month,
-      year: formData.year,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
       salary: formData.salary,
       remarks: formData.remarks,
       status: formData.status,
@@ -235,44 +225,25 @@ const SalaryPaymentModal = ({ isOpen, onClose, onSubmit, salaryPayment, isLoadin
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Year *
+                Start Date *
               </label>
               <input
-                type="number"
-                name="year"
-                value={formData.year}
+                type="date"
+                name="startDate"
+                value={formData.startDate}
                 onChange={handleChange}
-                min="2000"
-                max="2100"
                 className="input-field bg-slate-700 border-slate-600 text-white"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Month *
-              </label>
-              <select
-                name="month"
-                value={formData.month}
-                onChange={handleChange}
-                className="input-field bg-slate-700 border-slate-600 text-white"
-              >
-                {months.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Day *
+                End Date *
               </label>
               <input
-                type="number"
-                name="day"
-                value={formData.day}
+                type="date"
+                name="endDate"
+                value={formData.endDate}
                 onChange={handleChange}
-                min="1"
-                max="31"
                 className="input-field bg-slate-700 border-slate-600 text-white"
               />
             </div>
