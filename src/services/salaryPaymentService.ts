@@ -13,9 +13,7 @@ export interface CreateSalaryPaymentData {
     user: number;
     startDate: string;
     endDate: string;
-    salary: string;
     remarks: string;
-    status: string;
 }
 
 export interface SalaryPaymentStats {

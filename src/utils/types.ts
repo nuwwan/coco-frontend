@@ -171,12 +171,34 @@ export type MonthlyData = Record<string, number>;
 export interface SalaryPayment {
     id?: number;
     user: number;
-    startDate: string;
-    endDate: string;
+    salaryTerm: SalaryTerm;
     salary: string;
     remarks: string;
     status: string;
     createdAt?: string;  // readonly
     updatedAt?: string;  // readonly
     createdBy: number;
+}
+
+/**
+ * Salary Term - defines a pay period
+ */
+export interface SalaryTerm {
+    id: number;
+    startDate: string;
+    endDate: string;
+    title: string;
+}
+
+/**
+ * Employee record for period response
+ */
+export interface EmployeeRecordForPeriodResponse {
+    results: {
+        employee_records: EmployeeRecord[];
+        overtime_rate: number;
+        hourly_rate: number;
+    };
+    message: string;
+    error: string | null;
 }
