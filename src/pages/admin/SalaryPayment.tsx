@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type {  SalaryPayment } from "../../utils/types";
+import type { SalaryPayment } from "../../utils/types";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { ActionsRenderer, DataGrid } from '../../components/common';
-import { salaryPaymentService, type CreateSalaryPaymentData } from "../../services/salaryPaymentService";
+import { DataGrid } from '../../components/common';
+import { salaryRecordsService, type CreateSalaryRecordData } from "../../services/salaryRecordsService";
 import SalaryPaymentModal from "../../components/Admin/SalaryPayment/SalaryPaymentModal";
 import DeleteSalaryPaymentModal from "../../components/Admin/SalaryPayment/DeleteSalaryPaymentModal";
+import MarkAsPaidModal from "../../components/Admin/SalaryPayment/MarkAsPaidModal";
 
 const SalaryPayments = () => {
     // State
@@ -15,6 +16,7 @@ const SalaryPayments = () => {
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isMarkAsPaidModalOpen, setIsMarkAsPaidModalOpen] = useState(false);
     const [selectedSalaryPayment, setSelectedSalaryPayment] = useState<SalaryPayment | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,7 +27,7 @@ const SalaryPayments = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await salaryPaymentService.getAll();
+            const response = await salaryRecordsService.getAll();
             setSalaryPayments(response.data.results);
         } catch (err) {
             const errorMessage = err && typeof err === 'object' && 'message' in err
@@ -36,6 +38,7 @@ const SalaryPayments = () => {
             setLoading(false);
         }
     }, []);
+
 
     useEffect(() => {
         fetchSalaryPayments();
@@ -58,7 +61,7 @@ const SalaryPayments = () => {
     };
 
     /**
-     * Opens the delete confirmation modal
+     * Opens the delete modal
      */
     const openDeleteModal = (record: SalaryPayment) => {
         setSelectedSalaryPayment(record);
@@ -66,13 +69,21 @@ const SalaryPayments = () => {
     };
 
     /**
+     * Opens the mark as paid modal
+     */
+    const openMarkAsPaidModal = (record: SalaryPayment) => {
+        setSelectedSalaryPayment(record);
+        setIsMarkAsPaidModalOpen(true);
+    };
+
+    /**
      * Handles creating a new employee record
      */
-    const handleCreate = async (data: CreateSalaryPaymentData) => {
+    const handleCreate = async (data: CreateSalaryRecordData) => {
         setIsSubmitting(true);
         try {
-            const response = await salaryPaymentService.create(data);
-            setSalaryPayments(prev => [response.data, ...prev]);
+            const response = await salaryRecordsService.create(data);
+            setSalaryPayments(prev => [response.data.results, ...prev]);
             setIsModalOpen(false);
             setSelectedSalaryPayment(null);
         } catch (err) {
@@ -86,39 +97,14 @@ const SalaryPayments = () => {
     };
 
     /**
-     * Handles updating an employee record
-     */
-    const handleUpdate = async (data: CreateSalaryPaymentData) => {
-        if (!selectedSalaryPayment?.id) return;
-        setIsSubmitting(true);
-        try {
-            const response = await salaryPaymentService.update(selectedSalaryPayment.id, data);
-            setSalaryPayments(prev =>
-                prev.map(record => record.id === selectedSalaryPayment.id ? response.data : record)
-            );
-            setIsModalOpen(false);
-            setSelectedSalaryPayment(null);
-        } catch (err) {
-            const errorMessage = err && typeof err === 'object' && 'message' in err
-                ? (err as { message: string }).message
-                : 'Failed to update salary payment';
-            alert(errorMessage);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    /**
      * Handles deleting an employee record
      */
     const handleDelete = async () => {
-        if (!selectedSalaryPayment?.id) return;
         setIsSubmitting(true);
         try {
-            await salaryPaymentService.delete(selectedSalaryPayment.id);
-            setSalaryPayments(prev =>
-                prev.filter(record => record.id !== selectedSalaryPayment.id)
-            );
+            if (!selectedSalaryPayment?.id) return;
+            await salaryRecordsService.delete(selectedSalaryPayment.id);
+            setSalaryPayments(prev => prev.filter(record => record.id !== selectedSalaryPayment.id));
             setIsDeleteModalOpen(false);
             setSelectedSalaryPayment(null);
         } catch (err) {
@@ -132,51 +118,142 @@ const SalaryPayments = () => {
     };
 
     /**
+     * Handles marking a salary payment as paid
+     */
+    const handleMarkAsPaid = async () => {
+        if (!selectedSalaryPayment?.id) return;
+        setIsSubmitting(true);
+        try {
+            const response = await salaryRecordsService.markAsPaid(selectedSalaryPayment.id);
+            // Update the record in the list with the new status
+            setSalaryPayments(prev =>
+                prev.map(record =>
+                    record.id === selectedSalaryPayment.id
+                        ? { ...record, ...response.data, status: 'paid' }
+                        : record
+                )
+            );
+            setIsMarkAsPaidModalOpen(false);
+            setSelectedSalaryPayment(null);
+        } catch (err) {
+            const errorMessage = err && typeof err === 'object' && 'message' in err
+                ? (err as { message: string }).message
+                : 'Failed to mark salary payment as paid';
+            alert(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    /**
      * Gets formatted record info for delete modal
      */
     const getSalaryPaymentInfo = (record: SalaryPayment | null): string => {
         if (!record) return '';
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `User #${record.user} - ${months[record.month - 1]} ${record.day}, ${record.year} (${record.salary})`;
+        return `User #${record.user} - Salary Term #${record.salaryTerm} - Rs. ${parseFloat(record.salary || '0').toLocaleString()}`;
     };
 
     // AG Grid column definitions
     const columnDefs = useMemo<ColDef<SalaryPayment>[]>(() => [
         { field: 'id', headerName: 'ID', minWidth: 80, maxWidth: 100 },
         { field: 'user', headerName: 'User ID', minWidth: 100 },
-        { field: 'year', headerName: 'Year', minWidth: 100 },
+        { field: 'salaryTerm.title', headerName: 'Salary Term', minWidth: 120},
         { 
-            field: 'month', 
-            headerName: 'Month', 
-            minWidth: 100,
+            field: 'salary', 
+            headerName: 'Salary', 
+            minWidth: 130,
             valueFormatter: (params) => {
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                return months[params.value - 1] || params.value;
+                return `Rs. ${parseFloat(params.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
             }
         },
-        { field: 'day', headerName: 'Day', minWidth: 80 },
-        { field: 'salary', headerName: 'Salary', minWidth: 100 },
         { field: 'remarks', headerName: 'Remarks', minWidth: 150, flex: 1 },
-        { field: 'status', headerName: 'Status', minWidth: 100, valueFormatter: (params) => {
-            return params.value === 'pending' ? 'Pending' : params.value === 'paid' ? 'Paid' : 'Cancelled';
-        } },
+        { 
+            field: 'status', 
+            headerName: 'Status', 
+            minWidth: 100, 
+            cellRenderer: (params: ICellRendererParams) => {
+                const status = params.value;
+                const statusStyles: Record<string, string> = {
+                    pending: 'bg-amber-500/20 text-amber-400',
+                    paid: 'bg-emerald-500/20 text-emerald-400',
+                    cancelled: 'bg-red-500/20 text-red-400',
+                };
+                const statusLabels: Record<string, string> = {
+                    pending: 'Pending',
+                    paid: 'Paid',
+                    cancelled: 'Cancelled',
+                };
+                return (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || 'bg-slate-500/20 text-slate-400'}`}>
+                        {statusLabels[status] || status}
+                    </span>
+                );
+            }
+        },
+        { 
+            field: 'createdAt', 
+            headerName: 'Created', 
+            minWidth: 100,
+            valueFormatter: (params) => {
+                if (!params.value) return 'N/A';
+                return new Date(params.value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            }
+        },
         { 
             headerName: 'Actions', 
-            minWidth: 100, 
-            maxWidth: 100, 
+            minWidth: 140, 
+            maxWidth: 140, 
             sortable: false, 
             filter: false, 
-            cellRenderer: ActionsRenderer,
-            cellRendererParams: {
-                onEdit: (data: SalaryPayment) => openEditModal(data),
-                onDelete: (data: SalaryPayment) => openDeleteModal(data)
+            cellRenderer: (params: ICellRendererParams<SalaryPayment>) => {
+                const data = params.data;
+                if (!data) return null;
+                
+                const isPending = data.status === 'pending';
+                
+                return (
+                    <div className="flex items-center justify-end space-x-1">
+                        {/* Mark as Paid button - only show for pending records */}
+                        {isPending && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    openMarkAsPaidModal(data);
+                                }}
+                                className="text-slate-400 hover:text-emerald-400 p-2 transition-colors"
+                                title="Mark as Paid"
+                            >
+                                💵
+                            </button>
+                        )}
+                        {/* Edit button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(data);
+                            }}
+                            className="text-slate-400 hover:text-white p-2 transition-colors"
+                            title="Edit"
+                        >
+                            ✏️
+                        </button>
+                        {/* Delete button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteModal(data);
+                            }}
+                            className="text-slate-400 hover:text-red-400 p-2 transition-colors"
+                            title="Delete"
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                );
             },
         },
     ], []);
 
-    // Calculate summary stats
-    const totalRecords = salaryPayments.length;
-    const totalSalary = salaryPayments.reduce((sum, r) => sum + parseFloat(r.salary || '0'), 0);
 
     return (
         <div className="p-6 lg:p-8">
@@ -215,16 +292,16 @@ const SalaryPayments = () => {
             )}
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
-                    <p className="text-slate-400 text-sm">Total Salary Payments</p>
-                    <p className="text-2xl font-bold text-white">{totalRecords}</p>
+                    <p className="text-slate-400 text-sm">Total Salary Paid</p>
+                    <p className="text-2xl font-bold text-emerald-400">{salaryPaymentsStats?.totalPaid}</p>
                 </div>
                 <div className="card bg-slate-800/50 backdrop-blur border border-slate-700">
-                    <p className="text-slate-400 text-sm">Total Salary</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totalSalary.toFixed(2)}</p>
+                    <p className="text-slate-400 text-sm">Total Salary Pending</p>
+                    <p className="text-2xl font-bold text-white">{salaryPaymentsStats?.totalPending}</p>
                 </div>
-            </div>
+            </div> */}
 
             {/* AG Grid Table */}
             <div className="card bg-slate-800/50 backdrop-blur border border-slate-700 p-0 overflow-hidden">
@@ -245,11 +322,10 @@ const SalaryPayments = () => {
                     setIsModalOpen(false);
                     setSelectedSalaryPayment(null);
                 }}
-                onSubmit={selectedSalaryPayment ? handleUpdate : handleCreate}
+                onSubmit={handleCreate}
                 salaryPayment={selectedSalaryPayment}
                 isLoading={isSubmitting}
             />
-
             {/* Delete Confirmation Modal */}
             <DeleteSalaryPaymentModal
                 isOpen={isDeleteModalOpen}
@@ -259,6 +335,19 @@ const SalaryPayments = () => {
                 }}
                 onConfirm={handleDelete}
                 salaryPaymentInfo={getSalaryPaymentInfo(selectedSalaryPayment)}
+                isLoading={isSubmitting}
+            />
+
+            {/* Mark as Paid Confirmation Modal */}
+            <MarkAsPaidModal
+                isOpen={isMarkAsPaidModalOpen}
+                onClose={() => {
+                    setIsMarkAsPaidModalOpen(false);
+                    setSelectedSalaryPayment(null);
+                }}
+                onConfirm={handleMarkAsPaid}
+                salaryPaymentInfo={getSalaryPaymentInfo(selectedSalaryPayment)}
+                salaryAmount={selectedSalaryPayment?.salary || '0'}
                 isLoading={isSubmitting}
             />
         </div>

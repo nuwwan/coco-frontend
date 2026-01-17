@@ -61,10 +61,9 @@ export interface EmployeebasicDetails {
 export interface EmployeeRecord {
     id?: number;
     user: number;
-    year: number;
-    month: number;
-    day: number;
+    date: string;
     hours: string;
+    isPaid: boolean;
     otHours: string;
     remarks: string;
     createdAt?: string;  // readonly
@@ -133,9 +132,7 @@ export interface Expense {
     id?: number;
     title: string;
     expenseType: string;
-    year: number;
-    month: number;
-    day: number;
+    date: string;
     cost: string;
     status: string;
     remarks: string;
@@ -174,13 +171,34 @@ export type MonthlyData = Record<string, number>;
 export interface SalaryPayment {
     id?: number;
     user: number;
-    day: number;
-    month: number;
-    year: number;
+    salaryTerm: SalaryTerm;
     salary: string;
     remarks: string;
     status: string;
     createdAt?: string;  // readonly
     updatedAt?: string;  // readonly
     createdBy: number;
+}
+
+/**
+ * Salary Term - defines a pay period
+ */
+export interface SalaryTerm {
+    id: number;
+    startDate: string;
+    endDate: string;
+    title: string;
+}
+
+/**
+ * Employee record for period response
+ */
+export interface EmployeeRecordForPeriodResponse {
+    results: {
+        employee_records: EmployeeRecord[];
+        overtime_rate: number;
+        hourly_rate: number;
+    };
+    message: string;
+    error: string | null;
 }

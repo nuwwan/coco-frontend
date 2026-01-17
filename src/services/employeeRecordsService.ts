@@ -11,9 +11,8 @@ export interface EmployeeRecordListResponse {
 
 export interface CreateEmployeeRecordData {
     user: number;
-    year: number;
-    month: number;
-    day: number;
+    date: string;
+    isPaid: boolean;
     hours: string;
     otHours: string;
     remarks: string;

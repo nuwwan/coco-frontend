@@ -160,24 +160,23 @@ const Expenses = () => {
       minWidth: 150,
     },
     {
-      field: 'year',
-      headerName: 'Year',
-      minWidth: 150,
-    },
-    {
-      field: 'month',
-      headerName: 'Month',
-      minWidth: 150,
-    },
-    {
-      field: 'day',
-      headerName: 'Day',
+      field: 'date',
+      headerName: 'Date',
       minWidth: 150,
     },
     {
       field: 'cost',
       headerName: 'Cost',
       minWidth: 200,
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 150,
+      valueFormatter: (params) => {
+        return params.value ? 'Paid' : 'Pending';
+        return params.value ? 'Active' : 'Inactive';
+      },
     },
     {
       headerName: 'Actions',
