@@ -157,7 +157,7 @@ const SalaryPayments = () => {
         { 
             field: 'createdAt', 
             headerName: 'Created', 
-            minWidth: 120,
+            minWidth: 100,
             valueFormatter: (params) => {
                 if (!params.value) return 'N/A';
                 return new Date(params.value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
