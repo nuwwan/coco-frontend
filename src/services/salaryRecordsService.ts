@@ -69,6 +69,14 @@ class SalaryRecordsService {
     }
 
     /**
+     * Mark a salary record as paid
+     */
+    async markAsPaid(salaryRecordId: number): Promise<ApiResponse<SalaryPayment>> {
+        const url: string = `${this.basePath}/pay`;
+        return api.post<SalaryPayment>(withSlash(url), { salaryRecordId });
+    }
+
+    /**
      * Get employee records for a specific period and employee
      */
     async getEmployeeRecordsForPeriod(

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type {  SalaryPayment } from "../../utils/types";
+import type { SalaryPayment } from "../../utils/types";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
-import { ActionsRenderer, DataGrid } from '../../components/common';
+import { DataGrid } from '../../components/common';
 import { salaryRecordsService, type CreateSalaryRecordData } from "../../services/salaryRecordsService";
 import SalaryPaymentModal from "../../components/Admin/SalaryPayment/SalaryPaymentModal";
 import DeleteSalaryPaymentModal from "../../components/Admin/SalaryPayment/DeleteSalaryPaymentModal";
+import MarkAsPaidModal from "../../components/Admin/SalaryPayment/MarkAsPaidModal";
 
 const SalaryPayments = () => {
     // State
@@ -15,6 +16,7 @@ const SalaryPayments = () => {
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isMarkAsPaidModalOpen, setIsMarkAsPaidModalOpen] = useState(false);
     const [selectedSalaryPayment, setSelectedSalaryPayment] = useState<SalaryPayment | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -66,6 +68,13 @@ const SalaryPayments = () => {
         setIsDeleteModalOpen(true);
     };
 
+    /**
+     * Opens the mark as paid modal
+     */
+    const openMarkAsPaidModal = (record: SalaryPayment) => {
+        setSelectedSalaryPayment(record);
+        setIsMarkAsPaidModalOpen(true);
+    };
 
     /**
      * Handles creating a new employee record
@@ -108,6 +117,33 @@ const SalaryPayments = () => {
         }
     };
 
+    /**
+     * Handles marking a salary payment as paid
+     */
+    const handleMarkAsPaid = async () => {
+        if (!selectedSalaryPayment?.id) return;
+        setIsSubmitting(true);
+        try {
+            const response = await salaryRecordsService.markAsPaid(selectedSalaryPayment.id);
+            // Update the record in the list with the new status
+            setSalaryPayments(prev =>
+                prev.map(record =>
+                    record.id === selectedSalaryPayment.id
+                        ? { ...record, ...response.data, status: 'paid' }
+                        : record
+                )
+            );
+            setIsMarkAsPaidModalOpen(false);
+            setSelectedSalaryPayment(null);
+        } catch (err) {
+            const errorMessage = err && typeof err === 'object' && 'message' in err
+                ? (err as { message: string }).message
+                : 'Failed to mark salary payment as paid';
+            alert(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     /**
      * Gets formatted record info for delete modal
@@ -165,14 +201,55 @@ const SalaryPayments = () => {
         },
         { 
             headerName: 'Actions', 
-            minWidth: 100, 
-            maxWidth: 100, 
+            minWidth: 140, 
+            maxWidth: 140, 
             sortable: false, 
             filter: false, 
-            cellRenderer: ActionsRenderer,
-            cellRendererParams: {
-                onEdit: (data: SalaryPayment) => openEditModal(data),
-                onDelete: (data: SalaryPayment) => openDeleteModal(data)
+            cellRenderer: (params: ICellRendererParams<SalaryPayment>) => {
+                const data = params.data;
+                if (!data) return null;
+                
+                const isPending = data.status === 'pending';
+                
+                return (
+                    <div className="flex items-center justify-end space-x-1">
+                        {/* Mark as Paid button - only show for pending records */}
+                        {isPending && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    openMarkAsPaidModal(data);
+                                }}
+                                className="text-slate-400 hover:text-emerald-400 p-2 transition-colors"
+                                title="Mark as Paid"
+                            >
+                                💵
+                            </button>
+                        )}
+                        {/* Edit button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(data);
+                            }}
+                            className="text-slate-400 hover:text-white p-2 transition-colors"
+                            title="Edit"
+                        >
+                            ✏️
+                        </button>
+                        {/* Delete button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteModal(data);
+                            }}
+                            className="text-slate-400 hover:text-red-400 p-2 transition-colors"
+                            title="Delete"
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                );
             },
         },
     ], []);
@@ -250,16 +327,29 @@ const SalaryPayments = () => {
                 isLoading={isSubmitting}
             />
             {/* Delete Confirmation Modal */}
-                <DeleteSalaryPaymentModal
-                    isOpen={isDeleteModalOpen}
-                    onClose={() => {
-                        setIsDeleteModalOpen(false);
-                        setSelectedSalaryPayment(null);
-                    }}
-                    onConfirm={handleDelete}
-                    salaryPaymentInfo={getSalaryPaymentInfo(selectedSalaryPayment)}
-                    isLoading={isSubmitting}
-                />
+            <DeleteSalaryPaymentModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setSelectedSalaryPayment(null);
+                }}
+                onConfirm={handleDelete}
+                salaryPaymentInfo={getSalaryPaymentInfo(selectedSalaryPayment)}
+                isLoading={isSubmitting}
+            />
+
+            {/* Mark as Paid Confirmation Modal */}
+            <MarkAsPaidModal
+                isOpen={isMarkAsPaidModalOpen}
+                onClose={() => {
+                    setIsMarkAsPaidModalOpen(false);
+                    setSelectedSalaryPayment(null);
+                }}
+                onConfirm={handleMarkAsPaid}
+                salaryPaymentInfo={getSalaryPaymentInfo(selectedSalaryPayment)}
+                salaryAmount={selectedSalaryPayment?.salary || '0'}
+                isLoading={isSubmitting}
+            />
         </div>
     );
 };
